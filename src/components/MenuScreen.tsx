@@ -27,7 +27,7 @@ export function MenuScreen({ character, bestScore, progress, missions, dailyBest
     <main className="mx-auto flex min-h-full w-full max-w-4xl flex-col items-center justify-center gap-5 px-4 py-6 text-center">
       <header>
         <h1 className="text-5xl font-black uppercase leading-none tracking-tight text-saffron drop-shadow-[0_4px_0_#0b1530] sm:text-7xl">
-          Democracy <span className="text-cream">Dash</span>
+          Jantar <span className="text-cream">Dash</span>
         </h1>
         <p className="mt-3 text-base font-semibold text-cream/90 sm:text-xl">
           Run for your voice. Play for the people.

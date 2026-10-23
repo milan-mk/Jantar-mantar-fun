@@ -2,7 +2,18 @@ import { dailySeed } from '../game/systems/dailySeed';
 import type { CharacterId, Progress, RunStats } from '../types';
 
 /** Characters everyone starts with. */
-export const STARTER_CHARACTERS: readonly CharacterId[] = ['student', 'artist', 'checker'];
+export const STARTER_CHARACTERS: readonly CharacterId[] = [
+  'neha',
+  'abhijit',
+  'nsui',
+  'genz',
+  'ex_minister',
+  'wheelchair',
+  'chhota',
+  'student',
+  'artist',
+  'checker',
+];
 
 /** Missions to complete (across all days) before a locked character opens. */
 export const UNLOCK_MISSIONS: Partial<Record<CharacterId, number>> = { climber: 3 };
