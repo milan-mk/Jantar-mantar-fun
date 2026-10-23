@@ -310,7 +310,7 @@ export default function App() {
           <p className="hidden bg-navy-900 px-3 pb-1 text-center text-xs text-cream/70 [@media(orientation:portrait)_and_(pointer:coarse)]:block">
             Tip: rotate your device for a wider view.
           </p>
-          <div className="relative min-h-0 flex-1">
+          <div className="relative min-h-0 flex-1 w-full h-full overflow-hidden">
             <GameCanvas optionsRef={optionsRef} />
             <TouchControls onJump={jump} onMove={sendMove} />
             {hud.detainedMs > 0 && screen === 'playing' && (

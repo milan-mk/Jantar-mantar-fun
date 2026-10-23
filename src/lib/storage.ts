@@ -3,7 +3,19 @@ import { defaultProgress, STARTER_CHARACTERS } from './progress';
 
 const KEY = 'democracy-dash:v1';
 const MAX_SCORE = 1_000_000_000;
-const CHARACTERS: readonly CharacterId[] = ['student', 'artist', 'checker', 'climber'];
+const CHARACTERS: readonly CharacterId[] = [
+  'neha',
+  'abhijit',
+  'nsui',
+  'genz',
+  'ex_minister',
+  'wheelchair',
+  'chhota',
+  'student',
+  'artist',
+  'checker',
+  'climber',
+];
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Used when localStorage is blocked, so the session still works. */
@@ -22,7 +34,7 @@ export function defaultSave(): SaveData {
     bestScore: 0,
     ghosts: {},
     progress: defaultProgress(),
-    character: 'student',
+    character: 'neha',
     settings: { sound: true, music: true, reducedMotion: prefersReducedMotion() },
   };
 }
