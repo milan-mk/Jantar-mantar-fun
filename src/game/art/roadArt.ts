@@ -183,7 +183,7 @@ function stamper(key: string, frame: 0 | 1): ArtAsset {
 
 // ---------------------------------------------------------------- scenery
 
-const SIGNS = ['CHAI  &  SAMOSA', 'BOOK DEPOT', 'PHOTOSTAT', 'छोले भटूरे'];
+const SIGNS = ['CHAI &amp; SAMOSA', 'BOOK DEPOT', 'PHOTOSTAT', 'छोले भटूरे'];
 const FACADES: ReadonlyArray<{ wall: string; trim: string; awnA: string; awnB: string }> = [
   { wall: '#d9946a', trim: '#b8714a', awnA: '#2f8f8b', awnB: '#fff4dc' },
   { wall: '#e6c36a', trim: '#c49a3c', awnA: '#8a2b3a', awnB: '#fff4dc' },
