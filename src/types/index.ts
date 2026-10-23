@@ -1,4 +1,14 @@
-export type CharacterId = 'student' | 'artist' | 'checker';
+export type CharacterId =
+  | 'neha'
+  | 'abhijit'
+  | 'nsui'
+  | 'genz'
+  | 'ex_minister'
+  | 'wheelchair'
+  | 'chhota'
+  | 'student'
+  | 'artist'
+  | 'checker';
 
 export type PowerUpKind = 'shield' | 'community' | 'energy';
 

@@ -2,7 +2,18 @@ import type { CharacterId, SaveData, Settings } from '../types';
 
 const KEY = 'democracy-dash:v1';
 const MAX_SCORE = 1_000_000_000;
-const CHARACTERS: readonly CharacterId[] = ['student', 'artist', 'checker'];
+const CHARACTERS: readonly CharacterId[] = [
+  'neha',
+  'abhijit',
+  'nsui',
+  'genz',
+  'ex_minister',
+  'wheelchair',
+  'chhota',
+  'student',
+  'artist',
+  'checker',
+];
 
 /** Used when localStorage is blocked, so the session still works. */
 let memoryFallback: string | null = null;
@@ -18,7 +29,7 @@ export function prefersReducedMotion(): boolean {
 export function defaultSave(): SaveData {
   return {
     bestScore: 0,
-    character: 'student',
+    character: 'neha',
     settings: { sound: true, music: true, reducedMotion: prefersReducedMotion() },
   };
 }

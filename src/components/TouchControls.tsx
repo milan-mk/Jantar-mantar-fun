@@ -12,7 +12,7 @@ const RADIUS = 56;
 const DEAD_ZONE = 0.18;
 
 /**
- * Left: a drag joystick (further = faster; up sprints, down slows).
+ * Left: a drag joystick (push up to run, release to stop, sideways to steer).
  * Right: a JUMP button. Both use pointer events with capture, so a touch
  * only ever fires once. Shown on touch devices only.
  */

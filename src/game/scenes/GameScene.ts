@@ -35,6 +35,7 @@ import { PowerUpState } from '../systems/PowerUps';
 import { drawRoad } from '../systems/Road';
 import { scaleAt, xAt, yAt } from '../systems/Projection';
 import { ScoreKeeper } from '../systems/Score';
+import { DetentionSequence } from '../systems/Detention';
 import { Spawner } from '../systems/Spawner';
 import { World, type Entity } from '../systems/World';
 import { GAME_SCENE_KEY } from './BootScene';
@@ -56,6 +57,7 @@ export class GameScene extends Phaser.Scene {
   private bubble!: Phaser.GameObjects.Image;
   private flash!: Phaser.GameObjects.Rectangle;
   private popups!: Phaser.GameObjects.Group;
+  private detention!: DetentionSequence;
 
   private burst!: Emitter;
   private bigBurst!: Emitter;
@@ -103,6 +105,7 @@ export class GameScene extends Phaser.Scene {
     this.ringGfx = this.add.graphics().setDepth(990);
     this.bubble = this.add.image(0, 0, TEX.bubble).setDepth(1001).setVisible(false);
     this.popups = this.add.group();
+    this.detention = new DetentionSequence(this, this.runner, () => this.reduced);
     this.buildEffects();
     this.bindBridge();
 
@@ -117,6 +120,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    this.detention?.stop();
     for (const off of this.unsubscribers) off();
     this.unsubscribers = [];
   }
@@ -226,6 +230,7 @@ export class GameScene extends Phaser.Scene {
     this.endMs = 0;
     this.hudMs = 0;
     this.wasDetained = false;
+    this.detention.stop();
     this.flash.setAlpha(0);
     this.bubble.setVisible(false);
     this.spawner.update(0, speedAt(0), 0);
@@ -275,6 +280,7 @@ export class GameScene extends Phaser.Scene {
     this.spawner.update(this.distance, this.runner.speed, stageAt(progress));
     this.world.update(dt, this.runner.speed, this.runner.x);
     this.handleCollisions();
+    this.detention.update(dtMs);
     this.handleDetentionEnd();
 
     if (this.runState === 'running' && this.distance >= GOAL_METERS) this.startWin();
@@ -447,6 +453,8 @@ export class GameScene extends Phaser.Scene {
     this.power.grantInvulnerability(DETAIN_MS + 2000);
     audio.detain();
     this.shake(140, 0.006);
+    // Render once so the cut-scene starts from the runner's current screen position.
+    this.detention.start();
     // The officials who escorted you step aside for a while.
     for (let i = this.world.entities.length - 1; i >= 0; i--) {
       const e = this.world.entities[i];

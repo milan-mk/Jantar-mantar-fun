@@ -10,8 +10,6 @@ import {
   MAX_LIFE,
   PLAYER_Y,
   PPM,
-  SLOW_MULT,
-  SPRINT_MULT,
   X_LIMIT,
 } from '../config/constants';
 import { xAt } from '../systems/Projection';
@@ -30,6 +28,9 @@ export class Runner {
   stunMs = 0;
   splashMs = 0;
   dead = false;
+  /** Cut-scene hooks: sideways pixel offset and opacity (see systems/Detention.ts). */
+  offsetX = 0;
+  fade = 1;
   /** Screen position after the last render(), for effects. */
   screenX = 0;
   screenY = PLAYER_Y;
@@ -65,6 +66,8 @@ export class Runner {
     this.stunMs = 0;
     this.splashMs = 0;
     this.dead = false;
+    this.offsetX = 0;
+    this.fade = 1;
     this.stepPhase = 0;
     this.jumpBufferMs = 0;
     this.jumpedFlag = false;
@@ -113,13 +116,12 @@ export class Runner {
       this.x = Math.max(-X_LIMIT, Math.min(X_LIMIT, this.x + move.x * lateral * dt));
     }
 
-    // Forward speed: up sprints, down slows.
-    const mult = move.y >= 0 ? 1 + (SPRINT_MULT - 1) * move.y : 1 + (1 - SLOW_MULT) * move.y;
-    let target = cruise * mult;
+    // Forward speed: the runner only moves while Up is held; release to stop.
+    let target = move.y > 0 ? cruise : 0;
     if (this.stumbleMs > 0 || this.splashMs > 0) target *= energy ? 0.8 : 0.5;
     if (this.stunMs > 0) target *= 0.3;
     if (frozen) target = 0;
-    const accel = frozen ? 70 : 20;
+    const accel = frozen ? 70 : target > this.speed ? 20 : 40;
     const delta = target - this.speed;
     this.speed += Math.max(-accel * dt, Math.min(accel * dt, delta));
 
@@ -161,11 +163,11 @@ export class Runner {
     }
 
     const bob = this.airborne || reduced ? 0 : Math.abs(Math.sin(this.stepPhase * Math.PI * 0.5)) * 4;
-    this.screenX = xAt(this.x, 0, camX);
+    this.screenX = xAt(this.x, 0, camX) + this.offsetX;
     this.screenY = PLAYER_Y - this.jumpH * PPM - bob;
-    this.image.setPosition(this.screenX, this.screenY);
+    this.image.setPosition(this.screenX, this.screenY).setAlpha(this.dead ? 1 : this.fade);
 
     const shadowScale = Math.max(0.55, 1 - this.jumpH * 0.28);
-    this.shadow.setPosition(this.screenX, PLAYER_Y + 1).setDisplaySize(96 * shadowScale, 22 * shadowScale);
+    this.shadow.setPosition(this.screenX, PLAYER_Y + 1).setDisplaySize(96 * shadowScale, 22 * shadowScale).setAlpha(this.fade);
   }
 }

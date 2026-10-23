@@ -1,12 +1,9 @@
-import type { ArtAsset } from './worldArt';
+import { DETENTION_ASSETS } from './detentionArt';
 import { ROAD_ASSETS } from './roadArt';
-import { WORLD_ASSETS } from './worldArt';
+import { WORLD_ASSETS, type ArtAsset } from './worldArt';
 
-export const ALL_ASSETS: readonly ArtAsset[] = [
-  ...ROAD_ASSETS,
-  ...WORLD_ASSETS,
-];
+/** Every texture that is not a character pose. */
+export const ALL_ASSETS: readonly ArtAsset[] = [...WORLD_ASSETS, ...ROAD_ASSETS, ...DETENTION_ASSETS];
 
-export const TEXTURE_HEIGHT = new Map<string, number>(
-  ALL_ASSETS.map((asset) => [asset.key, asset.h]),
-);
+/** Raster height in pixels per texture key (used to size sprites in world units). */
+export const TEXTURE_HEIGHT: ReadonlyMap<string, number> = new Map(ALL_ASSETS.map((a) => [a.key, a.h]));

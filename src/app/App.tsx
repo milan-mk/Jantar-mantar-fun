@@ -261,8 +261,8 @@ export default function App() {
               <div className="pointer-events-none absolute inset-x-0 top-6 z-10 flex justify-center px-4" role="status" aria-live="assertive">
                 <div className="dd-pop flex max-w-md items-center gap-4 rounded-2xl border-4 border-[#2f6bff] bg-cream px-5 py-3 text-navy-900 shadow-2xl">
                   <div>
-                    <div className="text-3xl font-black uppercase italic leading-none">Stuck in the queue!</div>
-                    <div className="mt-1 text-sm font-bold">Form 27-B is being stamped. Released in&hellip;</div>
+                    <div className="text-3xl font-black uppercase italic leading-none">DETAINED!</div>
+                    <div className="mt-1 text-sm font-bold">Free van ride courtesy of the (fictional) patrol. Released in&hellip;</div>
                   </div>
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-[#12306b] bg-[#1b4fb0] text-4xl font-black text-cream">
                     {Math.ceil(hud.detainedMs / 1000)}

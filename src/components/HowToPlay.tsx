@@ -48,9 +48,9 @@ export function HowToPlay({ character, reducedMotion, onBack }: Props) {
           <div>
             <h3 className="flex items-center gap-2 text-lg font-extrabold">
               <ArrowLeft size={18} className="text-saffron" aria-hidden />
-              <ArrowRight size={18} className="text-saffron" aria-hidden /> Steer, sprint, slow
+              <ArrowRight size={18} className="text-saffron" aria-hidden /> Steer and run
             </h3>
-            <p className="text-sm text-cream/85">Weave between lanes. Hold up to sprint, down to slow down.</p>
+            <p className="text-sm text-cream/85">You stand still until you hold the up arrow. Hold it to run, let go to stop, and use left / right to steer through the gaps.</p>
             <p className="mt-1 flex flex-wrap items-center gap-1 text-xs">
               <Key>←</Key><Key>→</Key><Key>↑</Key><Key>↓</Key> or <Key>WASD</Key>, or drag the joystick
             </p>
