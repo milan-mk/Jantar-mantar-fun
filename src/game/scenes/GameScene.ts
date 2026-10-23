@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { audio } from '../../lib/audio';
-import type { GhostRun, MoveVector, PowerUpKind, RunStats } from '../../types';
+import type { MoveVector, PowerUpKind, RunStats } from '../../types';
 import { TEXTURE_HEIGHT } from '../art';
-import { RUN_POSES, FRAME_H, RES, textureKey } from '../art/characterArt';
+import { textureKey } from '../art/characterArt';
 import { TEX } from '../art/worldArt';
 import { CHARACTERS, type CharacterDef } from '../config/characters';
 import {
@@ -27,7 +27,6 @@ import {
   STUMBLE_MS,
   STUN_MS,
   ENERGY_SPEED_MULT,
-  VIEW_DIST,
   WIN_HOLD_MS,
 } from '../config/constants';
 import { ITEM_POINTS, type EntityKind } from '../config/entities';
@@ -105,7 +104,6 @@ export class GameScene extends Phaser.Scene {
   private rain!: Emitter;
   private readonly passedGuards = new WeakSet<Entity>();
   private ghostImg!: Phaser.GameObjects.Image;
-  private ghost: GhostRun | null = null;
   private trace: { d: number[]; x: number[] } = { d: [], x: [] };
   private traceMs = 0;
   private unsubscribers: Array<() => void> = [];
@@ -715,7 +713,6 @@ export class GameScene extends Phaser.Scene {
   private resetTrace(): void {
     this.trace = { d: [], x: [] };
     this.traceMs = 0;
-    this.ghost = this.opts.ghost;
     if (this.ghostImg) this.ghostImg.setVisible(false);
   }
 
@@ -730,34 +727,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderGhost(): void {
-    const g = this.ghost;
-    const img = this.ghostImg;
-    if (!g || this.runState === 'over') {
-      img.setVisible(false);
-      return;
-    }
-    const f = this.timeMs / TRACE_STEP_MS;
-    const i = Math.floor(f);
-    if (i + 1 >= g.d.length) {
-      img.setVisible(false); // the old run has finished
-      return;
-    }
-    const k = f - i;
-    const dist = (g.d[i] + (g.d[i + 1] - g.d[i]) * k) / 10;
-    const gx = (g.x[i] + (g.x[i + 1] - g.x[i]) * k) / 100;
-    const z = dist - this.distance;
-    if (z < -1.5 || z > VIEW_DIST - 10) {
-      img.setVisible(false);
-      return;
-    }
-    const s = scaleAt(z);
-    const pose = RUN_POSES[Math.floor(this.timeMs / 130) % RUN_POSES.length];
-    img
-      .setTexture(textureKey(this.def, pose))
-      .setPosition(xAt(gx, z, this.camX), yAt(z))
-      .setScale((s * 1.75 * PPM) / (FRAME_H * RES))
-      .setDepth(999 - z * 4)
-      .setVisible(true);
+    if (this.ghostImg) this.ghostImg.setVisible(false);
   }
 
   // ------------------------------------------------------------ run endings

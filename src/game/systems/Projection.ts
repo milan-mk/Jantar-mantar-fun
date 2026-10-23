@@ -6,7 +6,7 @@ import { CENTER_X, HORIZON_Y, PLAYER_Y, ROAD_HALF_PX, Z_CAM } from '../config/co
  * where -1 and +1 are the road edges.
  */
 export function scaleAt(z: number): number {
-  return Z_CAM / (Z_CAM + z);
+  return Z_CAM / Math.max(1.2, Z_CAM + z);
 }
 
 export function yAt(z: number): number {

@@ -17,6 +17,9 @@ export const ROAD_TEX = {
   clerk1: 'rd-clerk1',
   stamp0: 'rd-stamp0',
   stamp1: 'rd-stamp1',
+  van: 'rd-van',
+  reporter: 'rd-reporter',
+  cameraman: 'rd-cameraman',
   tree: 'rd-tree',
   lamp: 'rd-lamp',
   arch: 'rd-arch',
@@ -303,6 +306,87 @@ const arch = (() => {
   );
 })();
 
+const policeVan = makeAsset(
+  ROAD_TEX.van,
+  220,
+  160,
+  // ground shadow
+  `<ellipse cx="110" cy="152" rx="100" ry="8" fill="rgba(0,0,0,0.3)"/>` +
+    // van body
+    `<rect x="20" y="36" width="180" height="106" rx="14" fill="#ffffff" stroke="${NAVY}" stroke-width="2.6"/>` +
+    // blue side/front stripe with POLICE
+    `<rect x="20" y="88" width="180" height="24" fill="#1e3a8a"/>` +
+    `<text x="110" y="105" ${FONT} font-size="15" font-weight="900" fill="#ffffff" letter-spacing="2" text-anchor="middle">POLICE</text>` +
+    // front windshield
+    `<rect x="36" y="44" width="148" height="40" rx="8" fill="#334155" stroke="${NAVY}" stroke-width="2"/>` +
+    `<path d="M44 48 L120 48 L98 80 L44 80Z" fill="rgba(255,255,255,0.2)"/>` +
+    // roof siren lights (Red & Blue flashing)
+    `<rect x="80" y="22" width="28" height="14" rx="3" fill="#ef4444" stroke="${NAVY}" stroke-width="1.8"/>` +
+    `<rect x="112" y="22" width="28" height="14" rx="3" fill="#3b82f6" stroke="${NAVY}" stroke-width="1.8"/>` +
+    `<rect x="104" y="25" width="12" height="11" fill="#ffffff" opacity="0.8"/>` +
+    // headlights & bumper
+    `<circle cx="42" cy="122" r="10" fill="#fef08a" stroke="${NAVY}" stroke-width="2"/>` +
+    `<circle cx="178" cy="122" r="10" fill="#fef08a" stroke="${NAVY}" stroke-width="2"/>` +
+    `<rect x="62" y="118" width="96" height="10" rx="2" fill="#1e293b"/>` +
+    `<rect x="16" y="132" width="188" height="12" rx="4" fill="#94a3b8" stroke="${NAVY}" stroke-width="2"/>` +
+    // wheels
+    `<ellipse cx="48" cy="144" rx="16" ry="11" fill="#0f172a" stroke="${NAVY}" stroke-width="2"/>` +
+    `<ellipse cx="172" cy="144" rx="16" ry="11" fill="#0f172a" stroke="${NAVY}" stroke-width="2"/>`,
+);
+
+const samdishReporter = makeAsset(
+  ROAD_TEX.reporter,
+  150,
+  160,
+  // Speech bubble
+  `<rect x="6" y="4" width="138" height="26" rx="7" fill="#ffffff" stroke="${NAVY}" stroke-width="2"/>` +
+    `<polygon points="75,30 69,37 83,30" fill="#ffffff" stroke="${NAVY}" stroke-width="1.5"/>` +
+    `<text x="75" y="21" ${FONT} font-size="8" font-weight="900" fill="#000000" text-anchor="middle">AAPKO KYUN PAKDA JA RAHA HAI?</text>` +
+    // Name badge
+    `<rect x="25" y="38" width="100" height="14" rx="3" fill="#b91c1c" stroke="#000000" stroke-width="1.2"/>` +
+    `<text x="75" y="48" ${FONT} font-size="7.5" font-weight="900" fill="#ffffff" text-anchor="middle">SAMDISH - UNFILTERED</text>` +
+    // Reporter figure: dark hoodie / glasses / mic
+    `<rect x="63" y="114" width="10" height="38" rx="3" fill="#1e293b"/>` +
+    `<rect x="77" y="114" width="10" height="38" rx="3" fill="#1e293b"/>` +
+    `<ellipse cx="68" cy="152" rx="8" ry="4" fill="#ffffff"/><ellipse cx="82" cy="152" rx="8" ry="4" fill="#ffffff"/>` +
+    // Torso: dark blue jacket
+    `<rect x="57" y="72" width="36" height="44" rx="8" fill="#1e293b" stroke="${NAVY}" stroke-width="1.5"/>` +
+    // Arms holding mic
+    `<line x1="59" y1="82" x2="47" y2="98" stroke="#1e293b" stroke-width="7" stroke-linecap="round"/>` +
+    `<line x1="91" y1="82" x2="103" y2="98" stroke="#1e293b" stroke-width="7" stroke-linecap="round"/>` +
+    // Mic with red cube
+    `<rect x="41" y="94" width="12" height="12" rx="2" fill="#dc2626" stroke="#000000" stroke-width="1.2"/>` +
+    `<line x1="47" y1="106" x2="47" y2="120" stroke="#000000" stroke-width="3" stroke-linecap="round"/>` +
+    // Head with glasses and hair
+    `<circle cx="75" cy="58" r="13" fill="#c98e63" stroke="${NAVY}" stroke-width="1.4"/>` +
+    `<path d="M62 56 Q75 44 88 56 Q75 51 62 56Z" fill="#18181b"/>` +
+    `<rect x="66" y="55" width="8" height="5" rx="1.5" fill="none" stroke="#000000" stroke-width="1.4"/>` +
+    `<rect x="76" y="55" width="8" height="5" rx="1.5" fill="none" stroke="#000000" stroke-width="1.4"/>` +
+    `<line x1="74" y1="57" x2="76" y2="57" stroke="#000000" stroke-width="1.4"/>`,
+);
+
+const cameraman = makeAsset(
+  ROAD_TEX.cameraman,
+  140,
+  160,
+  // Name badge
+  `<rect x="18" y="16" width="104" height="15" rx="3" fill="#1e293b" stroke="#000000" stroke-width="1.2"/>` +
+    `<text x="70" y="27" ${FONT} font-size="7.5" font-weight="900" fill="#facc15" text-anchor="middle">CAMERA PERSON PARTH</text>` +
+    // Figure: beige shirt, shoulder video camera
+    `<rect x="57" y="112" width="11" height="40" rx="3" fill="#1e293b"/>` +
+    `<rect x="72" y="112" width="11" height="40" rx="3" fill="#1e293b"/>` +
+    `<ellipse cx="62" cy="152" rx="8" ry="4" fill="#000000"/><ellipse cx="77" cy="152" rx="8" ry="4" fill="#000000"/>` +
+    `<rect x="51" y="70" width="38" height="44" rx="7" fill="#d97706" stroke="${NAVY}" stroke-width="1.5"/>` +
+    // Video camera on shoulder
+    `<rect x="35" y="44" width="46" height="24" rx="4" fill="#0f172a" stroke="${NAVY}" stroke-width="1.8"/>` +
+    `<circle cx="81" cy="56" r="8" fill="#334155" stroke="${NAVY}" stroke-width="1.4"/>` +
+    `<circle cx="41" cy="50" r="2.5" fill="#ef4444"/>` +
+    `<text x="58" y="60" ${FONT} font-size="7" font-weight="900" fill="#ffffff">REC</text>` +
+    // Head with cap
+    `<circle cx="70" cy="52" r="12" fill="#c98e63" stroke="${NAVY}" stroke-width="1.4"/>` +
+    `<path d="M58 48 Q70 38 82 48Z" fill="#1e3a8a"/>`,
+);
+
 /** Everything the street view needs. */
 export const ROAD_ASSETS: readonly ArtAsset[] = [
   barricade,
@@ -314,6 +398,9 @@ export const ROAD_ASSETS: readonly ArtAsset[] = [
   clerk(ROAD_TEX.clerk1, 1),
   stamper(ROAD_TEX.stamp0, 0),
   stamper(ROAD_TEX.stamp1, 1),
+  policeVan,
+  samdishReporter,
+  cameraman,
   building(0),
   building(1),
   building(2),
