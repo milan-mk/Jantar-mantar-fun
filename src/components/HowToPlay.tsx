@@ -38,7 +38,7 @@ export function HowToPlay({ character, reducedMotion, onBack }: Props) {
             <h3 className="flex items-center gap-2 text-lg font-extrabold">
               <ArrowUp size={20} className="text-saffron" aria-hidden /> Jump
             </h3>
-            <p className="text-sm text-cream/85">Hop over barricades, cones and puddles. High tokens need a jump too.</p>
+            <p className="text-sm text-cream/85">Hop over barricades, cones and puddles. Jump to grab floating pizza, burgers and biryani.</p>
             <p className="mt-1 flex flex-wrap items-center gap-1 text-xs"><Key>Space</Key> or the <b>JUMP</b> button</p>
           </div>
         </section>
@@ -50,7 +50,7 @@ export function HowToPlay({ character, reducedMotion, onBack }: Props) {
               <ArrowLeft size={18} className="text-saffron" aria-hidden />
               <ArrowRight size={18} className="text-saffron" aria-hidden /> Steer and run
             </h3>
-            <p className="text-sm text-cream/85">You stand still until you hold the up arrow. Hold it to run, let go to stop, and use left / right to steer through the gaps. If you are caught, mash Space to wriggle free. A faint cyan runner is your best run so far: race it! Grab megaphones to slow the guards, watch for crossing rickshaws and tough checkpoints, and finish daily missions to unlock a new runner.</p>
+            <p className="text-sm text-cream/85">You stand still until you hold the up arrow. Hold it to run, let go to stop, and use left / right to steer through the gaps. If you are caught, mash Space to wriggle free. A faint cyan runner is your best run so far: race it! Grab burgers to slow down the guards, watch for crossing rickshaws and tough checkpoints, and finish daily missions to unlock a new runner.</p>
             <p className="mt-1 flex flex-wrap items-center gap-1 text-xs">
               <Key>←</Key><Key>→</Key><Key>↑</Key><Key>↓</Key> or <Key>WASD</Key>, or drag the joystick
             </p>
@@ -64,18 +64,20 @@ export function HowToPlay({ character, reducedMotion, onBack }: Props) {
           <ul className="space-y-1 text-cream/90">
             <li><b>Officers with lathis</b>: catch you and you are taken to the van for 5 seconds</li>
             <li><b>Stick squad</b>: riot-gear officers who chase you. A whack costs 50% stamina</li>
-            <li><b>Tear gas</b>: a red ring shows where a canister will land. Steer out of it, or jump high over the cloud</li>
-            <li><b>Barricades</b>: jump them (or lose 18%)</li>
+            <li><b>Tear gas</b>: a red ring shows where a canister will land. Steer clear or jump over (causes -35% stamina!)</li>
+            <li><b>Barricades</b>: jump them (or crash for -45% damage!)</li>
             <li>Rickshaws, paper piles and cones block lanes. Puddles slow you down</li>
           </ul>
         </div>
         <div>
-          <h3 className="mb-1 text-base font-extrabold text-saffron">Collect</h3>
+          <h3 className="mb-1 text-base font-extrabold text-saffron">Collect Food & Snacks</h3>
           <ul className="space-y-1 text-cream/90">
-            <li>Tokens 10, megaphones 25, placards 40 points</li>
-            <li>Fact-check tokens: 60 points and +8% stamina</li>
+            <li>🍕 <b>Pizza</b>: 10 points</li>
+            <li>🍔 <b>Burger</b>: 25 points (and slows guards!)</li>
+            <li>🍲 <b>Biryani Handi</b>: 40 points</li>
+            <li>🥟 <b>Samosa Platter</b>: 60 points and +8% stamina</li>
             <li><b>Fact Check Shield</b>: absorbs one hit (12 s)</li>
-            <li><b>Community Boost</b>: double item points (10 s)</li>
+            <li><b>Community Boost</b>: double food points (10 s)</li>
             <li><b>Energy Boost</b>: faster, higher jumps, bonus distance score (7 s)</li>
           </ul>
         </div>

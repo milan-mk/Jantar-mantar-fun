@@ -304,10 +304,10 @@ export class Spawner {
 
   private pickPickup(): EntityKind {
     const r = rng();
-    if (r < 0.74) return 'token';
-    if (r < 0.84) return 'megaphone';
-    if (r < 0.93) return 'placard';
-    return 'fact';
+    if (r < 0.45) return 'token'; // Pizza slice
+    if (r < 0.75) return 'megaphone'; // Burger
+    if (r < 0.93) return 'placard'; // Biryani Handi
+    return 'fact'; // Samosa Treat platter
   }
 
   /** A line of pickups in an open lane just beyond the row. */

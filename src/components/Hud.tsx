@@ -1,4 +1,4 @@
-import { Coins, Pause, ShieldCheck, Timer, Trophy, Users, Zap } from 'lucide-react';
+import { Pause, Pizza, ShieldCheck, Timer, Trophy, Users, Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { COMMUNITY_MS, ENERGY_MS, SHIELD_MS } from '../game/config/constants';
 import type { HudState } from '../types';
@@ -72,7 +72,7 @@ export function Hud({ hud, best, showFps, onPause }: Props) {
 
       <div className="col-span-3 flex flex-wrap items-center gap-2">
         <Chip icon={<Trophy size={16} className="text-saffron" aria-hidden />} label="Score" value={hud.score.toLocaleString()} />
-        <Chip icon={<Coins size={16} className="text-saffron" aria-hidden />} label="Items collected" value={String(hud.items)} />
+        <Chip icon={<Pizza size={16} className="text-saffron" aria-hidden />} label="Snacks (Pizza, Burger, Biryani)" value={`${hud.items} 🍕`} />
         <span className="hidden text-xs font-bold text-cream/75 sm:inline">Best {Math.max(best, hud.score).toLocaleString()}</span>
         {showFps && <span className="text-xs text-cream/60">{hud.fps} fps</span>}
         <div className="ml-auto flex flex-wrap items-center gap-2">

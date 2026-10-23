@@ -55,7 +55,7 @@ const GUARD_SLOW_MS = 5000;
 const GUARD_SLOW_FACTOR = 0.45;
 const FAST_ESCAPE_MS = 2500;
 
-type Weather = 'clear' | 'dusk' | 'rain';
+type Weather = 'clear' | 'dusk';
 const TRACE_STEP_MS = 100;
 const MAX_TRACE = 3000;
 
@@ -474,6 +474,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     switch (e.kind) {
+      case 'barricade':
+        e.used = true;
+        r.stumbleMs = STUMBLE_MS;
+        this.damage(45, 'CRASH!');
+        break;
       case 'puddle':
         e.used = true;
         r.splashMs = SPLASH_MS;
@@ -583,10 +588,18 @@ export class GameScene extends Phaser.Scene {
     audio.collect(tier);
     if (itemKind === 'megaphone') {
       this.guardSlowMs = GUARD_SLOW_MS;
-      this.popupAt('Crowd cheers! Guards slow down', GAME_WIDTH / 2, 150, '#ffd23f');
+      this.popupAt('Burger Power! Guards slow down', GAME_WIDTH / 2, 150, '#ffd23f');
     }
+    const foodName =
+      itemKind === 'token'
+        ? `+${points} Pizza! 🍕`
+        : itemKind === 'megaphone'
+          ? `+${points} Burger! 🍔`
+          : itemKind === 'placard'
+            ? `+${points} Biryani! 🍲`
+            : `+${points} Samosas! 🥟`;
     this.burst.explode(this.reduced ? 3 : 9, x, y);
-    this.popupAt(`+${points}`, x, y - 24, this.power.multiplier > 1 ? '#ffd23f' : '#fff4dc');
+    this.popupAt(foodName, x, y - 24, this.power.multiplier > 1 ? '#ffd23f' : '#fff4dc');
     if (itemKind === 'fact' && this.runner.life < MAX_LIFE) {
       this.runner.life = Math.min(MAX_LIFE, this.runner.life + HEAL_FROM_FACT);
       this.popupAt(`+${HEAL_FROM_FACT} stamina`, x, y - 52, '#7fe8e2');
@@ -648,7 +661,7 @@ export class GameScene extends Phaser.Scene {
   private applyGas(): void {
     const r = this.runner;
     if (!this.gasState.inside || r.dead || this.wasDetained) return;
-    r.stumbleMs = Math.max(r.stumbleMs, 350);
+    r.stumbleMs = Math.max(r.stumbleMs, 450);
     if (!this.gasState.firstContact || this.power.invulnerable) return;
     if (this.power.hasShield) {
       this.power.consumeShield();
@@ -657,8 +670,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     audio.cough();
-    r.stumbleMs = 1400;
-    this.damage(12, 'COUGH!');
+    r.stumbleMs = 1500;
+    this.damage(35, 'TEAR GAS!');
   }
 
   private resetRunCounters(): void {
@@ -677,20 +690,17 @@ export class GameScene extends Phaser.Scene {
     const daily = this.opts.mode === 'daily';
     const seed = daily ? dailySeed(this.opts.dailyKey) : null;
     if (seed !== null) {
-      this.weather = (['clear', 'dusk', 'rain'] as const)[seed % 3];
+      this.weather = (['clear', 'dusk'] as const)[seed % 2];
     } else {
       const roll = Math.random();
-      this.weather = roll < 0.25 ? 'rain' : roll < 0.5 ? 'dusk' : 'clear';
+      this.weather = roll < 0.5 ? 'dusk' : 'clear';
     }
     const tint = this.weatherTint;
-    if (this.weather === 'rain') tint.setFillStyle(0x1a2a5a, 0.2);
-    else if (this.weather === 'dusk') tint.setFillStyle(0xff7a3d, 0.13);
+    if (this.weather === 'dusk') tint.setFillStyle(0xff7a3d, 0.13);
     else tint.setFillStyle(0xffffff, 0);
-    if (this.weather === 'rain' && !this.reduced) this.rain.start();
-    else this.rain.stop();
-    this.spawner = new Spawner(this.world, GOAL_METERS, seed, this.weather === 'rain');
-    if (this.weather === 'rain') this.popupAt('Rainy day: mind the puddles!', GAME_WIDTH / 2, 120, '#bfe3ff');
-    else if (this.weather === 'dusk') this.popupAt('Sunset run!', GAME_WIDTH / 2, 120, '#ffd9a0');
+    this.rain.stop();
+    this.spawner = new Spawner(this.world, GOAL_METERS, seed, false);
+    if (this.weather === 'dusk') this.popupAt('Sunset run!', GAME_WIDTH / 2, 120, '#ffd9a0');
   }
 
   private announceCheckpoint(): void {

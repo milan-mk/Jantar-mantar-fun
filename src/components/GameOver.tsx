@@ -49,7 +49,7 @@ export function GameOver({ stats, summary, best, onAgain, onMenu }: Props) {
           <Stat label="Best" value={Math.max(best, stats.score).toLocaleString()} />
           <Stat label="Distance" value={`${stats.distance.toLocaleString()} m`} />
           <Stat label="Time" value={`${stats.timeSec}s`} />
-          <Stat label="Items" value={String(stats.items)} />
+          <Stat label="Food (🍕🍔🍲)" value={String(stats.items)} />
           <Stat label="Close calls" value={String(stats.closeCalls)} />
           <Stat label="Stamina left" value={`${stats.life}%`} />
         </div>
