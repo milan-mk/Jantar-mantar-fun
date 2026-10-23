@@ -143,7 +143,7 @@ export const CHARACTERS: Record<CharacterId, CharacterDef> = {
   },
   chhota: {
     id: 'chhota',
-    name: 'CHHOTA BADMAASH',
+    name: 'CHHOTA BADMOSH',
     trait: 'Chhota Dhamaka',
     blurb: 'Chhota pocket, bada dhamaka.',
     stats: { speed: 1.06, agility: 1.3, shield: 0.8 },
