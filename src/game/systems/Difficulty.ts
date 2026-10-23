@@ -8,12 +8,12 @@ export function speedAt(progress: number): number {
 
 /**
  * Hazard complexity stage:
- * 0 warm-up (single hazards, lone officials), 1 paperwork stacks and pairs,
- * 2 groups of officials and the rubber-stamp squad, 3 denser rows.
+ * 0 warm-up (single hazards, lone officers), 1 pairs, crossing traffic, tear gas and the stick squad,
+ * 2 groups of officers and faster grenades, 3 denser rows with double grenades.
  */
 export function stageAt(progress: number): 0 | 1 | 2 | 3 {
-  if (progress < 0.18) return 0;
-  if (progress < 0.45) return 1;
-  if (progress < 0.75) return 2;
+  if (progress < 0.12) return 0;
+  if (progress < 0.35) return 1;
+  if (progress < 0.65) return 2;
   return 3;
 }

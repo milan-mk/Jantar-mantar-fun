@@ -32,7 +32,7 @@ export function MenuScreen({ character, bestScore, progress, missions, dailyBest
         <p className="mt-3 text-base font-semibold text-cream/90 sm:text-xl">
           Run for your voice. Play for the people.
         </p>
-        <p className="mt-1 text-sm text-cream/80">Dodge the red tape and reach Jantar Mantar before your stamina runs out.</p>
+        <p className="mt-1 text-sm text-cream/80">Dodge barricades, the lathi squad and tear gas, and reach Jantar Mantar before your stamina runs out.</p>
       </header>
 
       <div className="flex flex-col items-center gap-1">

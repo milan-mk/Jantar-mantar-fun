@@ -97,6 +97,11 @@ const puddle = makeAsset(
 
 // ----------------------------------------------------------------- chasers
 
+const KHAKI = '#c9b27a';
+const KHAKI_DARK = '#a8915a';
+const CAP = '#1c2b52';
+
+/** A uniformed officer with a lathi (a generic, fictional guard). Front view, 80 x 150 grid. */
 function clerk(key: string, frame: 0 | 1): ArtAsset {
   const liftL = frame === 0 ? 7 : 0;
   const liftR = frame === 0 ? 0 : 7;
@@ -106,75 +111,79 @@ function clerk(key: string, frame: 0 | 1): ArtAsset {
     80,
     150,
     // alert bubble
-    `<circle cx="64" cy="14" r="12" fill="#1b4fb0" stroke="${CREAM}" stroke-width="2.5"/>` +
-      `<text x="64" y="20" ${FONT} font-size="17" font-weight="900" fill="${CREAM}" text-anchor="middle">!</text>` +
-      // legs
-      `<rect x="26" y="100" width="12" height="${44 - liftL}" rx="4" fill="#2b2b3a" stroke="${NAVY}" stroke-width="1.3"/>` +
-      `<rect x="42" y="100" width="12" height="${44 - liftR}" rx="4" fill="#2b2b3a" stroke="${NAVY}" stroke-width="1.3"/>` +
-      `<ellipse cx="32" cy="${145 - liftL}" rx="9" ry="4.5" fill="#1a1a1a"/><ellipse cx="48" cy="${145 - liftR}" rx="9" ry="4.5" fill="#1a1a1a"/>` +
-      // arms behind torso
-      `<line x1="58" y1="62" x2="68" y2="${92 - swing}" stroke="#f2ece0" stroke-width="9" stroke-linecap="round"/>` +
-      `<circle cx="68" cy="${93 - swing}" r="5" fill="#d9a577" stroke="${NAVY}" stroke-width="1.1"/>` +
-      // torso: shirt, vest, tie
-      `<rect x="21" y="52" width="38" height="52" rx="9" fill="#f2ece0" stroke="${NAVY}" stroke-width="1.8"/>` +
-      `<path d="M21 62 Q21 54 30 54 L38 54 L40 100 L24 100 Q21 100 21 94Z" fill="#8a2b3a"/>` +
-      `<path d="M59 62 Q59 54 50 54 L42 54 L40 100 L56 100 Q59 100 59 94Z" fill="#8a2b3a"/>` +
-      `<polygon points="40,54 44,60 40,84 36,60" fill="${RED}" stroke="${NAVY}" stroke-width="1"/>` +
-      // clipboard arm
-      `<line x1="22" y1="62" x2="14" y2="${90 + swing}" stroke="#f2ece0" stroke-width="9" stroke-linecap="round"/>` +
-      `<rect x="2" y="${68 + swing}" width="22" height="30" rx="2.5" fill="#8b5a2b" stroke="${NAVY}" stroke-width="1.6"/>` +
-      `<rect x="5" y="${72 + swing}" width="16" height="22" fill="${CREAM}"/>` +
-      `<line x1="7" y1="${78 + swing}" x2="19" y2="${78 + swing}" stroke="#999" stroke-width="1.2"/><line x1="7" y1="${83 + swing}" x2="19" y2="${83 + swing}" stroke="#999" stroke-width="1.2"/><line x1="7" y1="${88 + swing}" x2="15" y2="${88 + swing}" stroke="#999" stroke-width="1.2"/>` +
-      // head
-      `<circle cx="40" cy="34" r="17" fill="#d9a577" stroke="${NAVY}" stroke-width="1.8"/>` +
-      `<path d="M23 30 Q24 16 40 16 Q56 16 57 30 Q50 22 40 22 Q30 22 23 30Z" fill="#8c8c92"/>` +
-      `<circle cx="33" cy="34" r="5.5" fill="rgba(255,255,255,0.4)" stroke="${NAVY}" stroke-width="1.6"/><circle cx="47" cy="34" r="5.5" fill="rgba(255,255,255,0.4)" stroke="${NAVY}" stroke-width="1.6"/>` +
-      `<line x1="38.5" y1="34" x2="41.5" y2="34" stroke="${NAVY}" stroke-width="1.5"/>` +
-      `<line x1="27" y1="26" x2="37" y2="28" stroke="${NAVY}" stroke-width="2" stroke-linecap="round"/><line x1="53" y1="26" x2="43" y2="28" stroke="${NAVY}" stroke-width="2" stroke-linecap="round"/>` +
-      `<path d="M32 44 Q40 40 48 44 Q40 47 32 44Z" fill="#3b2a1d"/>`,
+    `<circle cx="66" cy="14" r="12" fill="#1b4fb0" stroke="${CREAM}" stroke-width="2.5"/>` +
+      `<text x="66" y="20" ${FONT} font-size="17" font-weight="900" fill="${CREAM}" text-anchor="middle">!</text>` +
+      // legs + boots
+      `<rect x="26" y="100" width="12" height="${44 - liftL}" rx="4" fill="${KHAKI_DARK}" stroke="${NAVY}" stroke-width="1.3"/>` +
+      `<rect x="42" y="100" width="12" height="${44 - liftR}" rx="4" fill="${KHAKI_DARK}" stroke="${NAVY}" stroke-width="1.3"/>` +
+      `<ellipse cx="32" cy="${145 - liftL}" rx="9.5" ry="5" fill="#1a1410"/><ellipse cx="48" cy="${145 - liftR}" rx="9.5" ry="5" fill="#1a1410"/>` +
+      // lathi arm (behind torso) holding the stick
+      `<line x1="58" y1="62" x2="68" y2="${88 - swing}" stroke="${KHAKI}" stroke-width="9" stroke-linecap="round"/>` +
+      `<line x1="64" y1="${112 - swing}" x2="74" y2="${52 - swing}" stroke="#7a4b24" stroke-width="5" stroke-linecap="round"/>` +
+      `<line x1="64" y1="${112 - swing}" x2="74" y2="${52 - swing}" stroke="#a8743a" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<circle cx="68" cy="${90 - swing}" r="5.5" fill="#c98e63" stroke="${NAVY}" stroke-width="1.1"/>` +
+      // torso: khaki shirt, belt, pockets
+      `<rect x="21" y="52" width="38" height="52" rx="9" fill="${KHAKI}" stroke="${NAVY}" stroke-width="1.8"/>` +
+      `<rect x="21" y="90" width="38" height="7" fill="#3b2a1d"/><rect x="36" y="89" width="8" height="9" rx="1.5" fill="#d9b24a" stroke="${NAVY}" stroke-width="0.9"/>` +
+      `<rect x="25" y="66" width="11" height="10" rx="1.5" fill="${KHAKI_DARK}" stroke="${NAVY}" stroke-width="0.9"/><rect x="44" y="66" width="11" height="10" rx="1.5" fill="${KHAKI_DARK}" stroke="${NAVY}" stroke-width="0.9"/>` +
+      `<line x1="40" y1="54" x2="40" y2="90" stroke="${KHAKI_DARK}" stroke-width="1.6"/>` +
+      `<rect x="26" y="57" width="8" height="4" rx="1" fill="#d9b24a"/>` +
+      // free arm
+      `<line x1="22" y1="62" x2="14" y2="${88 + swing}" stroke="${KHAKI}" stroke-width="9" stroke-linecap="round"/>` +
+      `<circle cx="14" cy="${90 + swing}" r="5.5" fill="#c98e63" stroke="${NAVY}" stroke-width="1.1"/>` +
+      // head, moustache, peaked cap
+      `<circle cx="40" cy="36" r="16" fill="#c98e63" stroke="${NAVY}" stroke-width="1.8"/>` +
+      `<circle cx="34" cy="37" r="2.2" fill="${NAVY}"/><circle cx="46" cy="37" r="2.2" fill="${NAVY}"/>` +
+      `<line x1="29" y1="31" x2="37" y2="33" stroke="${NAVY}" stroke-width="2" stroke-linecap="round"/><line x1="51" y1="31" x2="43" y2="33" stroke="${NAVY}" stroke-width="2" stroke-linecap="round"/>` +
+      `<path d="M32 44 Q40 40 48 44 Q40 47 32 44Z" fill="#241512"/>` +
+      `<path d="M24 28 Q24 10 40 10 Q56 10 56 28Z" fill="${CAP}" stroke="${NAVY}" stroke-width="1.6"/>` +
+      `<rect x="22" y="24" width="36" height="6" rx="2" fill="#0f1a38" stroke="${NAVY}" stroke-width="1.2"/>` +
+      `<circle cx="40" cy="17" r="3" fill="#d9b24a"/>`,
   );
 }
 
+/** Riot-gear officer with shield and a raised lathi (the "stick squad"). Front view, 120 x 170 grid. */
 function stamper(key: string, frame: 0 | 1): ArtAsset {
   const liftL = frame === 0 ? 8 : 0;
   const liftR = frame === 0 ? 0 : 8;
   const swing = frame === 0 ? 5 : -5;
+  const GEAR = '#3d4a66';
   return makeAsset(
     key,
     120,
     170,
     `<circle cx="16" cy="16" r="13" fill="${RED}" stroke="${CREAM}" stroke-width="2.5"/>` +
       `<text x="16" y="22" ${FONT} font-size="18" font-weight="900" fill="${CREAM}" text-anchor="middle">!!</text>` +
-      // legs
-      `<rect x="34" y="112" width="18" height="${52 - liftL}" rx="5" fill="#3d1722" stroke="${NAVY}" stroke-width="1.4"/>` +
-      `<rect x="62" y="112" width="18" height="${52 - liftR}" rx="5" fill="#3d1722" stroke="${NAVY}" stroke-width="1.4"/>` +
+      // legs + boots
+      `<rect x="34" y="112" width="18" height="${52 - liftL}" rx="5" fill="${GEAR}" stroke="${NAVY}" stroke-width="1.4"/>` +
+      `<rect x="62" y="112" width="18" height="${52 - liftR}" rx="5" fill="${GEAR}" stroke="${NAVY}" stroke-width="1.4"/>` +
       `<ellipse cx="43" cy="${165 - liftL}" rx="12" ry="5.5" fill="#141414"/><ellipse cx="71" cy="${165 - liftR}" rx="12" ry="5.5" fill="#141414"/>` +
-      // raised stamp arm
-      `<line x1="92" y1="76" x2="104" y2="${50 + swing}" stroke="#5a1f2d" stroke-width="13" stroke-linecap="round"/>` +
-      `<circle cx="105" cy="${48 + swing}" r="7" fill="#c98e63" stroke="${NAVY}" stroke-width="1.3"/>` +
-      `<rect x="100" y="${22 + swing}" width="10" height="22" rx="3" fill="#7a4b24" stroke="${NAVY}" stroke-width="1.3"/>` +
-      `<rect x="90" y="${14 + swing}" width="30" height="12" rx="3" fill="${RED}" stroke="${NAVY}" stroke-width="1.5"/>` +
-      // torso
-      `<rect x="20" y="62" width="76" height="58" rx="14" fill="#5a1f2d" stroke="${NAVY}" stroke-width="2"/>` +
-      `<polygon points="48,62 68,62 58,96" fill="#f2ece0"/><polygon points="58,64 62,70 58,100 54,70" fill="${RED}"/>` +
-      // sheet arm
-      `<line x1="24" y1="76" x2="14" y2="${98 - swing}" stroke="#5a1f2d" stroke-width="13" stroke-linecap="round"/>` +
-      `<rect x="2" y="${84 - swing}" width="36" height="30" rx="2" fill="${CREAM}" stroke="${NAVY}" stroke-width="1.6" transform="rotate(-6 20 100)"/>` +
-      `<text x="20" y="${103 - swing}" ${FONT} font-size="6.2" font-weight="900" fill="${RED}" text-anchor="middle" transform="rotate(-14 20 100)">REJECTED</text>` +
-      // head and bowler hat
-      `<circle cx="58" cy="42" r="21" fill="#c98e63" stroke="${NAVY}" stroke-width="2"/>` +
-      `<ellipse cx="58" cy="26" rx="27" ry="6.5" fill="#15151c" stroke="${NAVY}" stroke-width="1.2"/>` +
-      `<path d="M38 26 Q38 6 58 6 Q78 6 78 26Z" fill="#1c1c26" stroke="${NAVY}" stroke-width="1.5"/>` +
-      `<rect x="40" y="19" width="36" height="5" fill="${RED}"/>` +
-      `<circle cx="49" cy="43" r="2.6" fill="${NAVY}"/><circle cx="67" cy="43" r="2.6" fill="${NAVY}"/>` +
-      `<line x1="42" y1="36" x2="53" y2="39" stroke="${NAVY}" stroke-width="3" stroke-linecap="round"/><line x1="74" y1="36" x2="63" y2="39" stroke="${NAVY}" stroke-width="3" stroke-linecap="round"/>` +
-      `<path d="M48 54 Q58 49 68 54" fill="none" stroke="${NAVY}" stroke-width="2.4" stroke-linecap="round"/>`,
+      // raised lathi arm
+      `<line x1="92" y1="76" x2="104" y2="${52 + swing}" stroke="${GEAR}" stroke-width="13" stroke-linecap="round"/>` +
+      `<circle cx="105" cy="${50 + swing}" r="7" fill="#c98e63" stroke="${NAVY}" stroke-width="1.3"/>` +
+      `<line x1="101" y1="${74 + swing}" x2="112" y2="${16 + swing}" stroke="#7a4b24" stroke-width="7" stroke-linecap="round"/>` +
+      `<line x1="101" y1="${74 + swing}" x2="112" y2="${16 + swing}" stroke="#a8743a" stroke-width="2.2" stroke-linecap="round"/>` +
+      // torso: protective vest over khaki
+      `<rect x="20" y="62" width="76" height="58" rx="14" fill="${KHAKI}" stroke="${NAVY}" stroke-width="2"/>` +
+      `<rect x="30" y="66" width="56" height="48" rx="9" fill="${GEAR}" stroke="${NAVY}" stroke-width="1.6"/>` +
+      `<line x1="58" y1="68" x2="58" y2="112" stroke="${NAVY}" stroke-width="1.4"/><line x1="32" y1="90" x2="84" y2="90" stroke="${NAVY}" stroke-width="1.4"/>` +
+      // shield arm and clear shield
+      `<line x1="24" y1="78" x2="16" y2="100" stroke="${GEAR}" stroke-width="13" stroke-linecap="round"/>` +
+      `<rect x="0" y="62" width="34" height="72" rx="9" fill="rgba(170,215,255,0.55)" stroke="#e9f4ff" stroke-width="3"/>` +
+      `<line x1="8" y1="70" x2="26" y2="126" stroke="rgba(255,255,255,0.55)" stroke-width="3"/>` +
+      `<rect x="0" y="62" width="34" height="72" rx="9" fill="none" stroke="${NAVY}" stroke-width="1.2"/>` +
+      // head and helmet with visor
+      `<circle cx="58" cy="42" r="19" fill="#c98e63" stroke="${NAVY}" stroke-width="2"/>` +
+      `<path d="M37 40 Q37 12 58 12 Q79 12 79 40Z" fill="#5b6a8c" stroke="${NAVY}" stroke-width="1.8"/>` +
+      `<rect x="39" y="34" width="38" height="14" rx="5" fill="rgba(20,28,48,0.75)" stroke="${NAVY}" stroke-width="1.2"/>` +
+      `<circle cx="50" cy="42" r="2.4" fill="#e9f4ff"/><circle cx="66" cy="42" r="2.4" fill="#e9f4ff"/>` +
+      `<path d="M48 55 Q58 50 68 55" fill="none" stroke="${NAVY}" stroke-width="2.4" stroke-linecap="round"/>`,
   );
 }
 
 // ---------------------------------------------------------------- scenery
 
-const SIGNS = ['CHAI  &amp;  SAMOSA', 'BOOK DEPOT', 'PHOTOSTAT', 'छोले भटूरे'];
+const SIGNS = ['CHAI  &  SAMOSA', 'BOOK DEPOT', 'PHOTOSTAT', 'छोले भटूरे'];
 const FACADES: ReadonlyArray<{ wall: string; trim: string; awnA: string; awnB: string }> = [
   { wall: '#d9946a', trim: '#b8714a', awnA: '#2f8f8b', awnB: '#fff4dc' },
   { wall: '#e6c36a', trim: '#c49a3c', awnA: '#8a2b3a', awnB: '#fff4dc' },

@@ -21,7 +21,7 @@ export function getResultTitle(stats: Pick<RunStats, 'score' | 'won'>): string {
 export function buildShareText(stats: RunStats): string {
   const outcome = stats.won
     ? `reached Jantar Mantar in ${stats.timeSec}s`
-    : `ran ${stats.distance.toLocaleString()} m before the red tape caught up`;
+    : `ran ${stats.distance.toLocaleString()} m before the guards caught up`;
   return [
     `I ${outcome} in Democracy Dash and scored ${stats.score.toLocaleString()} (${getResultTitle(stats)})!`,
     `${stats.items} items collected.${stats.mode === 'daily' ? ` Daily Challenge ${stats.dailyKey}.` : ''}`,
