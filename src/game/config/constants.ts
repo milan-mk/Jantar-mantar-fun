@@ -20,6 +20,8 @@ export const CAMERA_FOLLOW = 0.5;
 
 // ---- Run -------------------------------------------------------------------
 export const GOAL_METERS = 1200;
+/** Distances (m) where a tougher checkpoint with a guard line appears. */
+export const CHECKPOINTS: readonly number[] = [400, 800, 1100];
 export const BASE_SPEED = 11; // m/s
 export const MAX_SPEED = 17;
 export const SPRINT_MULT = 1.3;

@@ -12,8 +12,9 @@ import { Button, Panel } from '../components/ui';
 import type { GameOptions } from '../game/config/options';
 import { audio } from '../lib/audio';
 import { Bridge } from '../lib/bridge';
+import { applyRun, missionsForDay, type RunSummary } from '../lib/progress';
 import { loadSave, writeSave } from '../lib/storage';
-import type { CharacterId, HudState, MoveVector, RunStats, SaveData, Screen, Settings } from '../types';
+import type { CharacterId, HudState, MoveVector, RunMode, RunStats, SaveData, Screen, Settings } from '../types';
 
 const EMPTY_HUD: HudState = {
   score: 0,
@@ -35,6 +36,14 @@ const MOVE_KEYS: readonly string[] = [
   'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyA', 'KeyD', 'KeyW', 'KeyS',
 ];
 
+/** Local calendar date as YYYY-MM-DD: everyone playing on the same day gets the same daily street. */
+function todayKey(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 export default function App() {
   const [bridge] = useState(() => new Bridge());
   const [save, setSave] = useState<SaveData>(loadSave);
@@ -42,7 +51,12 @@ export default function App() {
   const [hud, setHud] = useState<HudState>(EMPTY_HUD);
   const [stats, setStats] = useState<RunStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<RunMode>('free');
+  const [summary, setSummary] = useState<RunSummary | null>(null);
+  const [dailyKey, setDailyKey] = useState<string>(todayKey);
 
+  const saveRef = useRef(save);
+  saveRef.current = save;
   const screenRef = useRef<Screen>(screen);
   screenRef.current = screen;
   const readyRef = useRef(false);
@@ -53,10 +67,18 @@ export default function App() {
     character: save.character,
     settings: save.settings,
     bestScore: save.bestScore,
+    mode,
+    dailyKey,
+    ghost: null,
   });
+  const ghostKey = mode === 'daily' ? `daily-${dailyKey}` : 'free';
+  const modeBest = mode === 'daily' ? save.ghosts[ghostKey]?.score ?? 0 : save.bestScore;
   optionsRef.current.character = save.character;
   optionsRef.current.settings = save.settings;
-  optionsRef.current.bestScore = save.bestScore;
+  optionsRef.current.bestScore = modeBest;
+  optionsRef.current.mode = mode;
+  optionsRef.current.dailyKey = dailyKey;
+  optionsRef.current.ghost = save.ghosts[ghostKey] ?? null;
 
   // Persist whenever the save changes.
   useEffect(() => {
@@ -81,7 +103,25 @@ export default function App() {
       bridge.on('hud', (h) => setHud(h)),
       bridge.on('gameover', (s) => {
         setStats(s);
-        setSave((prev) => (s.score > prev.bestScore ? { ...prev, bestScore: s.score } : prev));
+        const applied = applyRun(saveRef.current.progress, s, todayKey());
+        setSummary(applied.summary);
+        setSave((prev) => {
+          const key = s.mode === 'daily' ? `daily-${s.dailyKey}` : 'free';
+          const old = prev.ghosts[key];
+          const next: SaveData = { ...prev, progress: applied.progress };
+          // Daily runs have their own best; only free runs count toward the overall best.
+          if (s.mode === 'free' && s.score > prev.bestScore) next.bestScore = s.score;
+          if (s.score > 0 && (!old || s.score > old.score) && s.trace.d.length >= 2) {
+            const keep: Record<string, typeof s.trace> = { [key]: s.trace };
+            if (key !== 'free' && prev.ghosts.free) keep.free = prev.ghosts.free;
+            if (key === 'free') {
+              const daily = `daily-${todayKey()}`;
+              if (prev.ghosts[daily]) keep[daily] = prev.ghosts[daily];
+            }
+            next.ghosts = keep;
+          }
+          return next;
+        });
         setScreen('gameover');
       }),
       bridge.on('error', (message) => setError(message)),
@@ -89,13 +129,16 @@ export default function App() {
     return () => offs.forEach((off) => off());
   }, [bridge]);
 
-  const startRun = useCallback(() => {
+  const startRun = useCallback((runMode: RunMode = 'free') => {
     audio.unlock();
+    setMode(runMode);
+    setDailyKey(todayKey());
     audio.click();
     readyRef.current = false;
     setError(null);
     setHud(EMPTY_HUD);
     setStats(null);
+    setSummary(null);
     setScreen('playing');
   }, []);
 
@@ -116,6 +159,7 @@ export default function App() {
     bridge.emit('restart');
     setHud(EMPTY_HUD);
     setStats(null);
+    setSummary(null);
     setScreen('playing');
   }, [bridge]);
 
@@ -185,7 +229,7 @@ export default function App() {
         const active = document.activeElement;
         const onControl = active instanceof HTMLButtonElement || active instanceof HTMLAnchorElement;
         if (onControl) return; // the focused control handles Enter itself
-        if (current === 'menu') startRun();
+        if (current === 'menu') startRun('free');
         else if (current === 'gameover') restart();
       }
     };
@@ -224,7 +268,8 @@ export default function App() {
   }, [pause]);
 
   const updateSettings = (settings: Settings): void => setSave((prev) => ({ ...prev, settings }));
-  const pickCharacter = (character: CharacterId): void => setSave((prev) => ({ ...prev, character }));
+  const pickCharacter = (character: CharacterId): void =>
+    setSave((prev) => (prev.progress.unlocked.includes(character) ? { ...prev, character } : prev));
 
   const reduced = save.settings.reducedMotion;
   const inGame = GAME_SCREENS.includes(screen);
@@ -236,21 +281,32 @@ export default function App() {
           character={save.character}
           bestScore={save.bestScore}
           reducedMotion={reduced}
-          onPlay={startRun}
+          progress={save.progress}
+          missions={missionsForDay(todayKey())}
+          dailyBest={save.ghosts[`daily-${dailyKey}`]?.score ?? 0}
+          dailyKey={todayKey()}
+          onPlay={() => startRun('free')}
+          onDaily={() => startRun('daily')}
           onSelect={() => setScreen('select')}
           onHowTo={() => setScreen('howto')}
           onSettings={() => setScreen('settings')}
         />
       )}
       {screen === 'select' && (
-        <CharacterSelect selected={save.character} onPick={pickCharacter} onBack={toMenu} />
+        <CharacterSelect
+          selected={save.character}
+          unlocked={save.progress.unlocked}
+          missionsTotal={save.progress.missionsTotal}
+          onPick={pickCharacter}
+          onBack={toMenu}
+        />
       )}
       {screen === 'howto' && <HowToPlay character={save.character} reducedMotion={reduced} onBack={toMenu} />}
       {screen === 'settings' && <SettingsScreen settings={save.settings} onChange={updateSettings} onBack={toMenu} />}
 
       {inGame && (
         <div className="flex h-full w-full flex-col">
-          <Hud hud={hud} best={save.bestScore} showFps={import.meta.env.DEV} onPause={pause} />
+          <Hud hud={hud} best={modeBest} showFps={import.meta.env.DEV} onPause={pause} />
           <p className="hidden bg-navy-900 px-3 pb-1 text-center text-xs text-cream/70 [@media(orientation:portrait)_and_(pointer:coarse)]:block">
             Tip: rotate your device for a wider view.
           </p>
@@ -262,7 +318,7 @@ export default function App() {
                 <div className="dd-pop flex max-w-md items-center gap-4 rounded-2xl border-4 border-[#2f6bff] bg-cream px-5 py-3 text-navy-900 shadow-2xl">
                   <div>
                     <div className="text-3xl font-black uppercase italic leading-none">DETAINED!</div>
-                    <div className="mt-1 text-sm font-bold">Free van ride courtesy of the (fictional) patrol. Released in&hellip;</div>
+                    <div className="mt-1 text-sm font-bold">Mash SPACE (or JUMP) to wriggle free! Released in&hellip;</div>
                   </div>
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-[#12306b] bg-[#1b4fb0] text-4xl font-black text-cream">
                     {Math.ceil(hud.detainedMs / 1000)}
@@ -272,14 +328,14 @@ export default function App() {
             )}
             {screen === 'paused' && <PauseMenu onResume={resume} onRestart={restart} onMenu={toMenu} />}
             {screen === 'gameover' && stats && (
-              <GameOver stats={stats} best={save.bestScore} onAgain={restart} onMenu={toMenu} />
+              <GameOver stats={stats} summary={summary} best={modeBest} onAgain={restart} onMenu={toMenu} />
             )}
             {error && (
               <div className="absolute inset-0 z-30 flex items-center justify-center bg-navy-900/90 p-4" role="alertdialog" aria-label="Error">
                 <Panel className="flex max-w-sm flex-col gap-3 text-center">
                   <h2 className="text-2xl font-black text-alert">Something went wrong</h2>
                   <p className="text-sm">{error}</p>
-                  <Button variant="primary" onClick={startRun}>Try again</Button>
+                  <Button variant="primary" onClick={() => startRun(mode)}>Try again</Button>
                   <Button variant="ghost" onClick={toMenu}>Main Menu</Button>
                 </Panel>
               </div>

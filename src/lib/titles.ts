@@ -24,7 +24,7 @@ export function buildShareText(stats: RunStats): string {
     : `ran ${stats.distance.toLocaleString()} m before the red tape caught up`;
   return [
     `I ${outcome} in Democracy Dash and scored ${stats.score.toLocaleString()} (${getResultTitle(stats)})!`,
-    `${stats.items} items collected.`,
+    `${stats.items} items collected.${stats.mode === 'daily' ? ` Daily Challenge ${stats.dailyKey}.` : ''}`,
     'Run for your voice. Play for the people.',
     '(A fictional, satirical arcade game: all characters and events are made up.)',
   ].join('\n');

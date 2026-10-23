@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import { audio } from '../../lib/audio';
-import type { MoveVector, PowerUpKind, RunStats } from '../../types';
+import type { GhostRun, MoveVector, PowerUpKind, RunStats } from '../../types';
 import { TEXTURE_HEIGHT } from '../art';
+import { RUN_POSES, FRAME_H, RES, textureKey } from '../art/characterArt';
 import { TEX } from '../art/worldArt';
 import { CHARACTERS, type CharacterDef } from '../config/characters';
 import {
   CAMERA_FOLLOW,
+  CHECKPOINTS,
   COLORS,
   DEATH_HOLD_MS,
   DETAIN_MS,
@@ -25,18 +27,20 @@ import {
   STUMBLE_MS,
   STUN_MS,
   ENERGY_SPEED_MULT,
+  VIEW_DIST,
   WIN_HOLD_MS,
 } from '../config/constants';
 import { ITEM_POINTS, type EntityKind } from '../config/entities';
 import type { GameOptions } from '../config/options';
 import { Runner } from '../entities/Runner';
-import { speedAt, stageAt } from '../systems/Difficulty';
+import { speedAt } from '../systems/Difficulty';
 import { PowerUpState } from '../systems/PowerUps';
 import { drawRoad } from '../systems/Road';
 import { scaleAt, xAt, yAt } from '../systems/Projection';
 import { ScoreKeeper } from '../systems/Score';
 import { DetentionSequence } from '../systems/Detention';
 import { Spawner } from '../systems/Spawner';
+import { dailySeed } from '../systems/dailySeed';
 import { World, type Entity } from '../systems/World';
 import { GAME_SCENE_KEY } from './BootScene';
 
@@ -45,6 +49,14 @@ type Emitter = Phaser.GameObjects.Particles.ParticleEmitter;
 
 const POWER_UP_KINDS: readonly EntityKind[] = ['shield', 'community', 'energy'];
 const HEAL_FROM_FACT = 8;
+const MASH_MS = 350;
+const GUARD_SLOW_MS = 5000;
+const GUARD_SLOW_FACTOR = 0.45;
+const FAST_ESCAPE_MS = 2500;
+
+type Weather = 'clear' | 'dusk' | 'rain';
+const TRACE_STEP_MS = 100;
+const MAX_TRACE = 3000;
 
 export class GameScene extends Phaser.Scene {
   private def!: CharacterDef;
@@ -77,6 +89,22 @@ export class GameScene extends Phaser.Scene {
   private dustMs = 0;
   private streakMs = 0;
   private wasDetained = false;
+  private closeCombo = 0;
+  private closeCalls = 0;
+  private timesCaught = 0;
+  private barricadeJumps = 0;
+  private fastEscapes = 0;
+  private detainStartMs = 0;
+  private guardSlowMs = 0;
+  private nextCheckpoint = 0;
+  private weather: Weather = 'clear';
+  private weatherTint!: Phaser.GameObjects.Rectangle;
+  private rain!: Emitter;
+  private readonly passedGuards = new WeakSet<Entity>();
+  private ghostImg!: Phaser.GameObjects.Image;
+  private ghost: GhostRun | null = null;
+  private trace: { d: number[]; x: number[] } = { d: [], x: [] };
+  private traceMs = 0;
   private unsubscribers: Array<() => void> = [];
 
   constructor(private readonly opts: GameOptions) {
@@ -95,21 +123,30 @@ export class GameScene extends Phaser.Scene {
     this.endMs = 0;
     this.hudMs = 0;
     this.wasDetained = false;
+    this.resetRunCounters();
+    this.resetTrace();
     this.power.reset();
     this.score.reset();
 
     this.buildBackdrop();
     this.world = new World(this, TEXTURE_HEIGHT);
-    this.spawner = new Spawner(this.world, GOAL_METERS);
+    this.weatherTint = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 0).setOrigin(0, 0).setDepth(1450);
     this.runner = new Runner(this, this.def, TEX.shadow);
+    this.ghostImg = this.add
+      .image(0, 0, textureKey(this.def, 'run1'))
+      .setOrigin(0.5, 1)
+      .setTint(0x8fe9ff)
+      .setAlpha(0.4)
+      .setVisible(false);
     this.ringGfx = this.add.graphics().setDepth(990);
     this.bubble = this.add.image(0, 0, TEX.bubble).setDepth(1001).setVisible(false);
     this.popups = this.add.group();
     this.detention = new DetentionSequence(this, this.runner, () => this.reduced);
     this.buildEffects();
+    this.applyWeather();
     this.bindBridge();
 
-    this.spawner.update(0, speedAt(0), 0);
+    this.spawner.update(0);
 
     const cleanup = (): void => this.cleanup();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, cleanup);
@@ -178,6 +215,21 @@ export class GameScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(998);
+    this.rain = this.add
+      .particles(0, 0, TEX.streak, {
+        x: { min: -40, max: GAME_WIDTH + 40 },
+        y: -10,
+        lifespan: 650,
+        speedY: { min: 850, max: 1100 },
+        speedX: -120,
+        rotate: 80,
+        scale: { start: 0.55, end: 0.45 },
+        alpha: { start: 0.45, end: 0.25 },
+        tint: 0xbfd8ff,
+        frequency: 25,
+        emitting: false,
+      })
+      .setDepth(1440);
     this.streaks = this.add
       .particles(0, 0, TEX.streak, {
         lifespan: 360,
@@ -198,7 +250,9 @@ export class GameScene extends Phaser.Scene {
         this.move = { x: v.x, y: v.y };
       }),
       bridge.on('jump', () => {
-        if (this.runState === 'running') this.runner.requestJump();
+        if (this.runState !== 'running') return;
+        if (this.runner.detainedMs > 0) this.mashEscape();
+        else this.runner.requestJump();
       }),
       bridge.on('pause', () => {
         if (this.runState === 'running' && this.scene.isActive(GAME_SCENE_KEY)) this.scene.pause();
@@ -219,7 +273,7 @@ export class GameScene extends Phaser.Scene {
     this.tweens.killAll();
     this.popups.clear(true, true);
     this.world.clear();
-    this.spawner.reset();
+    this.applyWeather(); // also builds a fresh spawner
     this.runner.reset();
     this.power.reset();
     this.score.reset();
@@ -230,10 +284,12 @@ export class GameScene extends Phaser.Scene {
     this.endMs = 0;
     this.hudMs = 0;
     this.wasDetained = false;
+    this.resetRunCounters();
+    this.resetTrace();
     this.detention.stop();
     this.flash.setAlpha(0);
     this.bubble.setVisible(false);
-    this.spawner.update(0, speedAt(0), 0);
+    this.spawner.update(0);
     this.emitHud();
   }
 
@@ -277,10 +333,15 @@ export class GameScene extends Phaser.Scene {
     this.distance += meters;
     this.score.addDistance(meters, energy);
 
-    this.spawner.update(this.distance, this.runner.speed, stageAt(progress));
+    this.guardSlowMs = Math.max(0, this.guardSlowMs - dtMs);
+    this.world.guardSlow = this.guardSlowMs > 0 ? GUARD_SLOW_FACTOR : 1;
+    this.announceCheckpoint();
+    this.spawner.update(this.distance);
     this.world.update(dt, this.runner.speed, this.runner.x);
     this.handleCollisions();
-    this.detention.update(dtMs);
+    this.handleCloseCalls();
+    this.recordTrace(dtMs);
+    this.detention.update();
     this.handleDetentionEnd();
 
     if (this.runState === 'running' && this.distance >= GOAL_METERS) this.startWin();
@@ -302,6 +363,7 @@ export class GameScene extends Phaser.Scene {
     this.far.setX(GAME_WIDTH / 2 - this.camX * 28);
     this.world.render(this.camX);
     this.runner.render(this.camX, this.reduced);
+    this.renderGhost();
     this.drawRing();
     this.updateEffects(dt * 1000);
   }
@@ -378,6 +440,7 @@ export class GameScene extends Phaser.Scene {
     if (clears) {
       e.used = true;
       if (e.kind === 'barricade' || e.kind === 'cones') {
+        if (e.kind === 'barricade') this.barricadeJumps += 1;
         this.score.addBonus(5);
         this.popup('Nice jump!', e, '#7fe8e2', 34);
       }
@@ -436,6 +499,7 @@ export class GameScene extends Phaser.Scene {
 
   private damage(amount: number, shout: string): void {
     const r = this.runner;
+    this.closeCombo = 0;
     r.life = Math.max(0, r.life - amount);
     this.power.grantInvulnerability(INVULN_MS);
     audio.hit();
@@ -449,6 +513,9 @@ export class GameScene extends Phaser.Scene {
   private detain(): void {
     const r = this.runner;
     r.detainedMs = DETAIN_MS;
+    this.timesCaught += 1;
+    this.detainStartMs = this.timeMs;
+    this.closeCombo = 0;
     this.wasDetained = true;
     this.power.grantInvulnerability(DETAIN_MS + 2000);
     audio.detain();
@@ -466,7 +533,9 @@ export class GameScene extends Phaser.Scene {
     if (this.wasDetained && this.runner.detainedMs <= 0) {
       this.wasDetained = false;
       audio.powerUp();
-      this.popupAt('Released! Run!', this.runner.screenX, this.runner.screenY - 170, '#fff4dc');
+      const quick = this.timeMs - this.detainStartMs < FAST_ESCAPE_MS;
+      if (quick) this.fastEscapes += 1;
+      this.popupAt(quick ? 'ESCAPED! Run!' : 'Released! Run!', this.runner.screenX, this.runner.screenY - 170, '#fff4dc');
     }
   }
 
@@ -497,12 +566,135 @@ export class GameScene extends Phaser.Scene {
     this.score.addItem(points);
     const tier = itemKind === 'token' ? 0 : itemKind === 'megaphone' ? 1 : itemKind === 'placard' ? 2 : 3;
     audio.collect(tier);
+    if (itemKind === 'megaphone') {
+      this.guardSlowMs = GUARD_SLOW_MS;
+      this.popupAt('Crowd cheers! Guards slow down', GAME_WIDTH / 2, 150, '#ffd23f');
+    }
     this.burst.explode(this.reduced ? 3 : 9, x, y);
     this.popupAt(`+${points}`, x, y - 24, this.power.multiplier > 1 ? '#ffd23f' : '#fff4dc');
     if (itemKind === 'fact' && this.runner.life < MAX_LIFE) {
       this.runner.life = Math.min(MAX_LIFE, this.runner.life + HEAL_FROM_FACT);
       this.popupAt(`+${HEAL_FROM_FACT} stamina`, x, y - 52, '#7fe8e2');
     }
+  }
+
+  // ------------------------------------------------------ new in this patch
+
+  /** Each jump press while detained shortens the van ride. */
+  private mashEscape(): void {
+    const r = this.runner;
+    r.detainedMs = Math.max(0, r.detainedMs - MASH_MS);
+    audio.click();
+    this.popupAt('Push!', r.screenX + Phaser.Math.Between(-60, 60), r.screenY - 120, '#7fe8e2');
+  }
+
+  /** Slipping past a patrolling guard without being caught earns a growing bonus. */
+  private handleCloseCalls(): void {
+    const r = this.runner;
+    for (const e of this.world.entities) {
+      if (e.kind !== 'clerk' || !e.patrol || e.used || this.passedGuards.has(e)) continue;
+      if (e.z > -(e.spec.halfD + PLAYER_HALF_D) - 0.1) continue;
+      this.passedGuards.add(e);
+      if (r.dead || this.wasDetained) continue;
+      const gap = Math.abs(e.x - r.x);
+      if (gap > 0.95) continue;
+      this.closeCombo += 1;
+      this.closeCalls += 1;
+      const bonus = 15 * Math.min(this.closeCombo, 6) * this.def.stats.risk;
+      this.score.addBonus(bonus);
+      audio.collect(Math.min(3, this.closeCombo - 1));
+      const tag = this.closeCombo > 1 ? `x${this.closeCombo} CLOSE CALL!` : 'PHEW! CLOSE CALL!';
+      this.popupAt(`${tag}  +${bonus}`, r.screenX, r.screenY - 190, '#ffd23f');
+    }
+  }
+
+  private resetRunCounters(): void {
+    this.closeCombo = 0;
+    this.closeCalls = 0;
+    this.timesCaught = 0;
+    this.barricadeJumps = 0;
+    this.fastEscapes = 0;
+    this.detainStartMs = 0;
+    this.guardSlowMs = 0;
+    this.nextCheckpoint = 0;
+  }
+
+  /** Picks the day's weather (seeded for the daily challenge), restyles the scene and builds a fresh spawner. */
+  private applyWeather(): void {
+    const daily = this.opts.mode === 'daily';
+    const seed = daily ? dailySeed(this.opts.dailyKey) : null;
+    if (seed !== null) {
+      this.weather = (['clear', 'dusk', 'rain'] as const)[seed % 3];
+    } else {
+      const roll = Math.random();
+      this.weather = roll < 0.25 ? 'rain' : roll < 0.5 ? 'dusk' : 'clear';
+    }
+    const tint = this.weatherTint;
+    if (this.weather === 'rain') tint.setFillStyle(0x1a2a5a, 0.2);
+    else if (this.weather === 'dusk') tint.setFillStyle(0xff7a3d, 0.13);
+    else tint.setFillStyle(0xffffff, 0);
+    if (this.weather === 'rain' && !this.reduced) this.rain.start();
+    else this.rain.stop();
+    this.spawner = new Spawner(this.world, GOAL_METERS, seed, this.weather === 'rain');
+    if (this.weather === 'rain') this.popupAt('Rainy day: mind the puddles!', GAME_WIDTH / 2, 120, '#bfe3ff');
+    else if (this.weather === 'dusk') this.popupAt('Sunset run!', GAME_WIDTH / 2, 120, '#ffd9a0');
+  }
+
+  private announceCheckpoint(): void {
+    if (this.nextCheckpoint >= CHECKPOINTS.length) return;
+    if (this.distance < CHECKPOINTS[this.nextCheckpoint] - 100) return;
+    this.nextCheckpoint += 1;
+    audio.powerUp();
+    this.shake(160, 0.004);
+    this.popupAt('CHECKPOINT AHEAD!', GAME_WIDTH / 2, 150, '#ff6b6b');
+  }
+
+  private resetTrace(): void {
+    this.trace = { d: [], x: [] };
+    this.traceMs = 0;
+    this.ghost = this.opts.ghost;
+    if (this.ghostImg) this.ghostImg.setVisible(false);
+  }
+
+  /** Samples distance and lane every 100 ms so the best run can be replayed. */
+  private recordTrace(dtMs: number): void {
+    this.traceMs += dtMs;
+    while (this.traceMs >= TRACE_STEP_MS && this.trace.d.length < MAX_TRACE) {
+      this.traceMs -= TRACE_STEP_MS;
+      this.trace.d.push(Math.round(this.distance * 10));
+      this.trace.x.push(Math.round(this.runner.x * 100));
+    }
+  }
+
+  private renderGhost(): void {
+    const g = this.ghost;
+    const img = this.ghostImg;
+    if (!g || this.runState === 'over') {
+      img.setVisible(false);
+      return;
+    }
+    const f = this.timeMs / TRACE_STEP_MS;
+    const i = Math.floor(f);
+    if (i + 1 >= g.d.length) {
+      img.setVisible(false); // the old run has finished
+      return;
+    }
+    const k = f - i;
+    const dist = (g.d[i] + (g.d[i + 1] - g.d[i]) * k) / 10;
+    const gx = (g.x[i] + (g.x[i + 1] - g.x[i]) * k) / 100;
+    const z = dist - this.distance;
+    if (z < -1.5 || z > VIEW_DIST - 10) {
+      img.setVisible(false);
+      return;
+    }
+    const s = scaleAt(z);
+    const pose = RUN_POSES[Math.floor(this.timeMs / 130) % RUN_POSES.length];
+    img
+      .setTexture(textureKey(this.def, pose))
+      .setPosition(xAt(gx, z, this.camX), yAt(z))
+      .setScale((s * 1.75 * PPM) / (FRAME_H * RES))
+      .setDepth(999 - z * 4)
+      .setVisible(true);
   }
 
   // ------------------------------------------------------------ run endings
@@ -543,6 +735,13 @@ export class GameScene extends Phaser.Scene {
       life,
       won,
       isNewBest: score > 0 && score > this.opts.bestScore,
+      mode: this.opts.mode,
+      dailyKey: this.opts.mode === 'daily' ? this.opts.dailyKey : '',
+      closeCalls: this.closeCalls,
+      timesCaught: this.timesCaught,
+      barricadeJumps: this.barricadeJumps,
+      fastEscapes: this.fastEscapes,
+      trace: { score, d: [...this.trace.d], x: [...this.trace.x] },
     };
     this.emitHud();
     this.opts.bridge.emit('gameover', stats);

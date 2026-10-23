@@ -1,8 +1,19 @@
-import { LANE_X, VIEW_DIST } from '../config/constants';
+import { CHECKPOINTS, LANE_X, VIEW_DIST } from '../config/constants';
 import type { EntityKind } from '../config/entities';
+import { speedAt, stageAt } from './Difficulty';
 import type { World } from './World';
 
-type RowKind = 'wall' | 'rickshaw' | 'cones' | 'puddle' | 'paper' | 'clerks' | 'stampers' | 'combo';
+type RowKind =
+  | 'wall'
+  | 'rickshaw'
+  | 'cones'
+  | 'puddle'
+  | 'paper'
+  | 'clerks'
+  | 'stampers'
+  | 'combo'
+  | 'traffic'
+  | 'checkpoint';
 
 interface RowDef {
   kind: RowKind;
@@ -19,19 +30,42 @@ const ROWS: readonly RowDef[] = [
   { kind: 'paper', minStage: 1, weight: 2 },
   { kind: 'stampers', minStage: 2, weight: 2 },
   { kind: 'combo', minStage: 2, weight: 2 },
+  { kind: 'traffic', minStage: 1, weight: 2 },
 ];
 
 const POWER_UPS: readonly EntityKind[] = ['shield', 'community', 'energy'];
 const FIRST_ROW_AT = 55;
 const FIRST_POWER_AT = 140;
 
-const rand = (min: number, max: number): number => min + Math.random() * (max - min);
+/** Active random source. Swapped per section so seeded (daily) streets stay identical. */
+let rng: () => number = Math.random;
+
+/** Small deterministic generator (mulberry32). */
+export function seededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Keeps a patrol zone on the road (|x| <= 0.95) while staying centred where it can. */
+function patrolZone(center: number, range: number, speed: number): { center: number; range: number; speed: number } {
+  const lo = Math.max(-0.95, center - range);
+  const hi = Math.min(0.95, center + range);
+  return { center: (lo + hi) / 2, range: (hi - lo) / 2, speed };
+}
+
+const rand = (min: number, max: number): number => min + rng() * (max - min);
 const randInt = (min: number, max: number): number => Math.floor(rand(min, max + 1));
 
 function shuffled<T>(items: readonly T[]): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
@@ -52,16 +86,33 @@ export class Spawner {
   private lastRow: RowKind | null = null;
   private powerBag: EntityKind[] = [];
   private archPlaced = false;
+  private checkpointIdx = 0;
   private treeSide = 1;
   private lampSide = 1;
   private buildingSide = 1;
 
+  private rowRng: () => number = Math.random;
+  private sceneRng: () => number = Math.random;
+
+  /** Pass a seed for a repeatable street (daily challenge); omit for a random one. */
   constructor(
     private readonly world: World,
     private readonly goal: number,
-  ) {}
+    private readonly seed: number | null = null,
+    /** Rainy streets get many more puddles. */
+    private readonly rainy = false,
+  ) {
+    this.reseed();
+  }
+
+  private reseed(): void {
+    // Separate streams so scenery (placed by frame timing) never shifts the hazards.
+    this.rowRng = this.seed === null ? Math.random : seededRandom(this.seed);
+    this.sceneRng = this.seed === null ? Math.random : seededRandom(this.seed ^ 0x9e3779b9);
+  }
 
   reset(): void {
+    this.reseed();
     this.nextRowAt = FIRST_ROW_AT;
     this.nextPowerAt = FIRST_POWER_AT;
     this.nextTreeAt = 3;
@@ -71,10 +122,13 @@ export class Spawner {
     this.lastRow = null;
     this.powerBag = [];
     this.archPlaced = false;
+    this.checkpointIdx = 0;
   }
 
-  update(dist: number, speed: number, stage: number): void {
+  update(dist: number): void {
+    rng = this.sceneRng;
     this.fillScenery(dist);
+    rng = this.rowRng;
 
     if (!this.archPlaced && dist + VIEW_DIST >= this.goal) {
       this.world.spawn('arch', 0, this.goal - dist);
@@ -83,7 +137,13 @@ export class Spawner {
 
     while (this.nextRowAt - dist <= VIEW_DIST - 4 && this.nextRowAt < this.goal - 35) {
       const z = this.nextRowAt - dist;
-      const open = this.spawnRow(z, stage);
+      // Spacing and difficulty depend on the row's position, not on how fast the player runs.
+      const progress = this.nextRowAt / this.goal;
+      const stage = stageAt(progress);
+      const speed = speedAt(progress);
+      const isCheckpoint = this.checkpointIdx < CHECKPOINTS.length && this.nextRowAt >= CHECKPOINTS[this.checkpointIdx];
+      if (isCheckpoint) this.checkpointIdx += 1;
+      const open = isCheckpoint ? this.spawnCheckpoint(z, stage) : this.spawnRow(z, stage);
       this.placeTrail(z, open);
       const gap = speed * (1.0 + rand(0, stage >= 3 ? 0.45 : 0.7)) + 6;
       this.nextRowAt += gap;
@@ -121,7 +181,7 @@ export class Spawner {
       this.nextBuildingAt += 4.5;
     }
     while (this.nextSpectatorAt - dist <= horizon) {
-      const side = Math.random() < 0.5 ? -1 : 1;
+      const side = rng() < 0.5 ? -1 : 1;
       this.world.spawn('spectator', side * rand(1.14, 1.26), this.nextSpectatorAt - dist, {
         variant: randInt(0, 3),
       });
@@ -132,14 +192,15 @@ export class Spawner {
   // ------------------------------------------------------------------- rows
 
   private pickRow(stage: number): RowKind {
-    const afterChasers = this.lastRow === 'clerks' || this.lastRow === 'stampers';
+    const afterChasers = this.lastRow === 'clerks' || this.lastRow === 'stampers' || this.lastRow === 'checkpoint';
     const pool = ROWS.filter(
       (r) => r.minStage <= stage && r.kind !== this.lastRow && !(afterChasers && r.kind === 'wall'),
     );
-    const total = pool.reduce((sum, r) => sum + r.weight, 0);
-    let roll = Math.random() * total;
+    const weightOf = (r: RowDef): number => (this.rainy && r.kind === 'puddle' ? r.weight * 3 : r.weight);
+    const total = pool.reduce((sum, r) => sum + weightOf(r), 0);
+    let roll = rng() * total;
     for (const r of pool) {
-      roll -= r.weight;
+      roll -= weightOf(r);
       if (roll <= 0) return r.kind;
     }
     return pool[0].kind;
@@ -159,7 +220,7 @@ export class Spawner {
     switch (kind) {
       case 'wall': {
         // Barricade line with 1-2 adjacent gaps; a guard patrols in front of the gap.
-        const gapLanes = stage < 2 || Math.random() < 0.5 ? 1 : 2;
+        const gapLanes = stage < 2 || rng() < 0.5 ? 1 : 2;
         const start = randInt(0, 4 - gapLanes);
         const gaps: number[] = [];
         for (let lane = 0; lane < 4; lane++) {
@@ -168,9 +229,8 @@ export class Spawner {
         }
         const center = (LANE_X[gaps[0]] + LANE_X[gaps[gaps.length - 1]]) / 2;
         const range = 0.28 + 0.25 * gapLanes;
-        this.world.spawn('clerk', center, z - 5, {
-          patrol: { center, range, speed: 0.55 + stage * 0.12 },
-        });
+        const zone = patrolZone(center, range, 0.55 + stage * 0.12);
+        this.world.spawn('clerk', zone.center, z - 5, { patrol: zone });
         // Reward a jump over the barricades with a high token.
         const jumpLane = [0, 1, 2, 3].find((l) => !gaps.includes(l)) ?? 0;
         this.world.spawn('token', LANE_X[jumpLane], z, { lift: 1.9 });
@@ -195,6 +255,16 @@ export class Spawner {
         block(b, 'paper');
         break;
       }
+      case 'traffic': {
+        // Rickshaws crossing the road side to side: time your run, or wait.
+        const count = stage >= 2 ? 2 : 1;
+        for (let i = 0; i < count; i++) {
+          this.world.spawn('rickshaw', rand(-0.6, 0.6), z + i * 1.8, {
+            patrol: { center: 0, range: 0.78, speed: 0.75 + stage * 0.12 + i * 0.2 },
+          });
+        }
+        return [0, 1, 2, 3];
+      }
       case 'clerks': {
         const count = [1, randInt(1, 2), 2, randInt(2, 3)][stage] ?? 2;
         for (const lane of lanes.slice(0, count)) {
@@ -213,8 +283,27 @@ export class Spawner {
     return [0, 1, 2, 3].filter((l) => !blocked.has(l));
   }
 
+  /** A tougher barricade line with one gap, two fast guards, and a reward behind it. */
+  private spawnCheckpoint(z: number, stage: number): number[] {
+    this.lastRow = 'checkpoint';
+    const gapLane = randInt(0, 3);
+    for (let lane = 0; lane < 4; lane++) {
+      if (lane !== gapLane) this.world.spawn('barricade', LANE_X[lane], z);
+    }
+    const center = LANE_X[gapLane];
+    const speed = 0.85 + stage * 0.1;
+    const a = patrolZone(center, 0.7, speed);
+    const b = patrolZone(center, 0.7, speed * 1.25);
+    this.world.spawn('clerk', a.center, z - 3, { patrol: a });
+    this.world.spawn('clerk', b.center, z - 7, { patrol: b });
+    // Reward for getting through.
+    this.world.spawn('megaphone', center, z + 3);
+    this.world.spawn('fact', center, z + 4.6);
+    return [gapLane];
+  }
+
   private pickPickup(): EntityKind {
-    const r = Math.random();
+    const r = rng();
     if (r < 0.74) return 'token';
     if (r < 0.84) return 'megaphone';
     if (r < 0.93) return 'placard';

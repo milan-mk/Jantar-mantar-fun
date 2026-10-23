@@ -127,7 +127,7 @@ export class Runner {
 
     // Jump
     if (!frozen && this.jumpBufferMs > 0 && !this.airborne) {
-      this.vy = energy ? ENERGY_JUMP_VELOCITY : JUMP_VELOCITY;
+      this.vy = (energy ? ENERGY_JUMP_VELOCITY : JUMP_VELOCITY) * this.def.stats.jump;
       this.jumpH = 0.002;
       this.jumpBufferMs = 0;
       this.jumpedFlag = true;

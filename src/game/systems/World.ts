@@ -42,6 +42,8 @@ export interface SpawnOptions {
  */
 export class World {
   readonly entities: Entity[] = [];
+  /** Multiplies guard patrol speed (a megaphone cheer slows them down). */
+  guardSlow = 1;
   private readonly free: Phaser.GameObjects.Image[] = [];
 
   constructor(
@@ -102,7 +104,7 @@ export class World {
       }
       const p = e.patrol;
       if (p) {
-        e.x += p.dir * p.speed * dtSec;
+        e.x += p.dir * p.speed * (e.kind === 'clerk' ? this.guardSlow : 1) * dtSec;
         const lo = p.center - p.range;
         const hi = p.center + p.range;
         if (e.x <= lo) {

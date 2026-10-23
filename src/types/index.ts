@@ -1,14 +1,4 @@
-export type CharacterId =
-  | 'neha'
-  | 'abhijit'
-  | 'nsui'
-  | 'genz'
-  | 'ex_minister'
-  | 'wheelchair'
-  | 'chhota'
-  | 'student'
-  | 'artist'
-  | 'checker';
+export type CharacterId = 'student' | 'artist' | 'checker' | 'climber';
 
 export type PowerUpKind = 'shield' | 'community' | 'energy';
 
@@ -27,8 +17,34 @@ export interface Settings {
   reducedMotion: boolean;
 }
 
+export type RunMode = 'free' | 'daily';
+
+/** A recorded run, sampled every 100 ms, replayed as the "best run" ghost. */
+export interface GhostRun {
+  score: number;
+  /** Distance in decimetres at each sample. */
+  d: number[];
+  /** Lateral position x 100 at each sample. */
+  x: number[];
+}
+
+/** Long-term progress: streak, daily missions, achievements and unlocks. */
+export interface Progress {
+  streak: { last: string; count: number };
+  /** Missions completed on `date` (ids), so each day starts fresh. */
+  missionsDone: { date: string; ids: string[] };
+  missionsTotal: number;
+  achievements: string[];
+  totalItems: number;
+  totalRuns: number;
+  unlocked: CharacterId[];
+}
+
 export interface SaveData {
+  progress: Progress;
   bestScore: number;
+  /** Best runs by key: 'free' or 'daily-YYYY-MM-DD'. */
+  ghosts: Record<string, GhostRun>;
   character: CharacterId;
   settings: Settings;
 }
@@ -45,6 +61,15 @@ export interface RunStats {
   /** True when the runner reached the finish line. */
   won: boolean;
   isNewBest: boolean;
+  mode: RunMode;
+  /** YYYY-MM-DD for daily runs, empty otherwise. */
+  dailyKey: string;
+  closeCalls: number;
+  timesCaught: number;
+  barricadeJumps: number;
+  /** Times the runner escaped the van in under 2.5 s by mashing. */
+  fastEscapes: number;
+  trace: GhostRun;
 }
 
 /** Throttled snapshot the scene sends to the React HUD. */

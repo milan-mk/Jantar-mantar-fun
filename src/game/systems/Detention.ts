@@ -112,10 +112,13 @@ export class DetentionSequence {
     this.layout();
   }
 
-  /** Call every frame with the frame time in ms. */
-  update(dtMs: number): void {
+  /**
+   * Call every frame. The cut-scene follows the detention timer, so mashing
+   * jump (which shortens the timer) fast-forwards it.
+   */
+  update(): void {
     if (!this.active) return;
-    this.t += dtMs;
+    this.t = Math.max(this.t, DETAIN_MS - this.runner.detainedMs);
     this.spawnBeats();
     this.layout();
     this.animateCaptions();
@@ -210,6 +213,7 @@ export class DetentionSequence {
     while (this.nextBeat < BEATS.length && this.t >= BEATS[this.nextBeat].at) {
       const beat = BEATS[this.nextBeat];
       this.nextBeat += 1;
+      if (this.t > beat.at + beat.len) continue; // fast-forwarded past it
       const x = Phaser.Math.Clamp(this.anchorX(beat), 190, GAME_WIDTH - 190);
       this.captions.push({ beat, node: this.buildCaption(beat, x, this.baseY + beat.dy) });
     }
