@@ -33,12 +33,13 @@ import {
 import { ITEM_POINTS, type EntityKind } from '../config/entities';
 import type { GameOptions } from '../config/options';
 import { Runner } from '../entities/Runner';
-import { speedAt } from '../systems/Difficulty';
+import { speedAt, stageAt } from '../systems/Difficulty';
 import { PowerUpState } from '../systems/PowerUps';
 import { drawRoad } from '../systems/Road';
 import { scaleAt, xAt, yAt } from '../systems/Projection';
 import { ScoreKeeper } from '../systems/Score';
 import { DetentionSequence } from '../systems/Detention';
+import { GasSystem } from '../systems/Gas';
 import { Spawner } from '../systems/Spawner';
 import { dailySeed } from '../systems/dailySeed';
 import { World, type Entity } from '../systems/World';
@@ -48,7 +49,7 @@ type RunState = 'running' | 'dying' | 'won' | 'over';
 type Emitter = Phaser.GameObjects.Particles.ParticleEmitter;
 
 const POWER_UP_KINDS: readonly EntityKind[] = ['shield', 'community', 'energy'];
-const HEAL_FROM_FACT = 8;
+const HEAL_FROM_FACT = 6;
 const MASH_MS = 350;
 const GUARD_SLOW_MS = 5000;
 const GUARD_SLOW_FACTOR = 0.45;
@@ -70,6 +71,8 @@ export class GameScene extends Phaser.Scene {
   private flash!: Phaser.GameObjects.Rectangle;
   private popups!: Phaser.GameObjects.Group;
   private detention!: DetentionSequence;
+  private gas!: GasSystem;
+  private gasState = { inside: false, firstContact: false };
 
   private burst!: Emitter;
   private bigBurst!: Emitter;
@@ -142,6 +145,14 @@ export class GameScene extends Phaser.Scene {
     this.bubble = this.add.image(0, 0, TEX.bubble).setDepth(1001).setVisible(false);
     this.popups = this.add.group();
     this.detention = new DetentionSequence(this, this.runner, () => this.reduced);
+    this.gas = new GasSystem(this, {
+      onThrow: () => audio.gasThrow(),
+      onBurst: (x, y) => {
+        audio.gasBurst();
+        this.shake(110, 0.004);
+        this.burst.explode(this.reduced ? 3 : 10, x, y - 20);
+      },
+    });
     this.buildEffects();
     this.applyWeather();
     this.bindBridge();
@@ -286,6 +297,7 @@ export class GameScene extends Phaser.Scene {
     this.wasDetained = false;
     this.resetRunCounters();
     this.resetTrace();
+    this.gas.reset();
     this.detention.stop();
     this.flash.setAlpha(0);
     this.bubble.setVisible(false);
@@ -346,7 +358,9 @@ export class GameScene extends Phaser.Scene {
 
     if (this.runState === 'running' && this.distance >= GOAL_METERS) this.startWin();
 
+    this.updateGasThrows(dtMs, progress);
     this.renderFrame(dt);
+    this.applyGas();
 
     this.hudMs += dtMs;
     if (this.hudMs >= HUD_INTERVAL_MS) {
@@ -363,6 +377,7 @@ export class GameScene extends Phaser.Scene {
     this.far.setX(GAME_WIDTH / 2 - this.camX * 28);
     this.world.render(this.camX);
     this.runner.render(this.camX, this.reduced);
+    this.gasState = this.gas.update(dt * 1000, this.distance, this.runner.x, this.runner.jumpH, this.camX, this.reduced);
     this.renderGhost();
     this.drawRing();
     this.updateEffects(dt * 1000);
@@ -472,27 +487,27 @@ export class GameScene extends Phaser.Scene {
       case 'stamp':
         this.world.remove(e);
         r.stunMs = STUN_MS;
-        this.damage(50, 'REJECTED!');
+        this.damage(50, 'THWACK!');
         break;
       case 'cones':
         e.used = true;
         r.stumbleMs = 400;
-        this.damage(6, 'Oops!');
+        this.damage(8, 'Oops!');
         break;
       case 'paper':
         e.used = true;
         r.stumbleMs = STUMBLE_MS;
-        this.damage(15, 'PENDING...');
+        this.damage(18, 'PENDING...');
         break;
       case 'rickshaw':
         e.used = true;
         r.stumbleMs = STUMBLE_MS;
-        this.damage(20, 'BLOW HORN!');
+        this.damage(25, 'BLOW HORN!');
         break;
       default:
         e.used = true;
         r.stumbleMs = STUMBLE_MS;
-        this.damage(15, 'DHAPP!');
+        this.damage(18, 'DHAPP!');
         break;
     }
   }
@@ -522,7 +537,7 @@ export class GameScene extends Phaser.Scene {
     this.shake(140, 0.006);
     // Render once so the cut-scene starts from the runner's current screen position.
     this.detention.start();
-    // The officials who escorted you step aside for a while.
+    // The officers who escorted you step aside for a while.
     for (let i = this.world.entities.length - 1; i >= 0; i--) {
       const e = this.world.entities[i];
       if ((e.kind === 'clerk' || e.kind === 'stamp') && e.z < 40) this.world.remove(e);
@@ -606,6 +621,44 @@ export class GameScene extends Phaser.Scene {
       const tag = this.closeCombo > 1 ? `x${this.closeCombo} CLOSE CALL!` : 'PHEW! CLOSE CALL!';
       this.popupAt(`${tag}  +${bonus}`, r.screenX, r.screenY - 190, '#ffd23f');
     }
+  }
+
+  /** An officer ahead throws a canister at where the runner is heading. */
+  private updateGasThrows(dtMs: number, progress: number): void {
+    const stage = stageAt(progress);
+    if (this.wasDetained || this.runner.dead || this.distance > GOAL_METERS - 40) return;
+    if (!this.gas.canThrow(dtMs, stage)) return;
+    const throwers = this.world.entities.filter(
+      (e) => (e.kind === 'clerk' || e.kind === 'stamp') && !e.used && e.z > 18 && e.z < 75,
+    );
+    if (throwers.length === 0) return;
+    const src = throwers[Math.floor(Math.random() * throwers.length)];
+    const r = this.runner;
+    // Aim where the runner will be: ahead by about one flight time, and a bit sideways if steering.
+    const landAbs = this.distance + Math.max(r.speed, 7) + 2;
+    const aimX = Phaser.Math.Clamp(r.x + this.move.x * 0.4, -0.9, 0.9);
+    this.gas.throwFrom(src.x, this.distance + src.z, aimX, landAbs);
+    if (stage >= 3 && Math.random() < 0.5) {
+      this.gas.throwFrom(src.x, this.distance + src.z, aimX, landAbs + 3, aimX > 0 ? -0.6 : 0.6);
+    }
+    this.gas.rearm(stage);
+  }
+
+  /** Standing in a cloud slows you; the first touch also costs stamina. */
+  private applyGas(): void {
+    const r = this.runner;
+    if (!this.gasState.inside || r.dead || this.wasDetained) return;
+    r.stumbleMs = Math.max(r.stumbleMs, 350);
+    if (!this.gasState.firstContact || this.power.invulnerable) return;
+    if (this.power.hasShield) {
+      this.power.consumeShield();
+      audio.shieldPop();
+      this.popupAt('Fact-Check Shield!', r.screenX, r.screenY - 170, '#7fe8e2');
+      return;
+    }
+    audio.cough();
+    r.stumbleMs = 1400;
+    this.damage(12, 'COUGH!');
   }
 
   private resetRunCounters(): void {

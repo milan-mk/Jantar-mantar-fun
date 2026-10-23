@@ -25,8 +25,8 @@ export function HowToPlay({ character, reducedMotion, onBack }: Props) {
     <main className="mx-auto flex min-h-full w-full max-w-4xl flex-col items-center justify-center gap-5 px-4 py-6">
       <h2 className="text-3xl font-black uppercase text-saffron sm:text-4xl">How to play</h2>
       <p className="max-w-2xl text-center text-sm text-cream/90">
-        Run down the street to <b>Jantar Mantar</b>. You have 1,200 metres, and a stamina bar that the red tape wants to
-        drain. Reach the finish arch before it hits zero.
+        Run down the street to <b>Jantar Mantar</b>. You have 1,200 metres, and a stamina bar that the guards, barricades and
+        tear gas want to drain. Reach the finish arch before it hits zero.
       </p>
 
       <div className="grid w-full gap-4 sm:grid-cols-2">
@@ -62,9 +62,10 @@ export function HowToPlay({ character, reducedMotion, onBack }: Props) {
         <div>
           <h3 className="mb-1 text-base font-extrabold text-saffron">Watch out</h3>
           <ul className="space-y-1 text-cream/90">
-            <li><b>Paperwork officials</b>: catch you and you are stuck in the queue for 5 seconds</li>
-            <li><b>Rubber-stamp squad</b>: a REJECTED stamp costs 50% stamina</li>
-            <li><b>Barricades</b>: jump them (or lose 15%)</li>
+            <li><b>Officers with lathis</b>: catch you and you are taken to the van for 5 seconds</li>
+            <li><b>Stick squad</b>: riot-gear officers who chase you. A whack costs 50% stamina</li>
+            <li><b>Tear gas</b>: a red ring shows where a canister will land. Steer out of it, or jump high over the cloud</li>
+            <li><b>Barricades</b>: jump them (or lose 18%)</li>
             <li>Rickshaws, paper piles and cones block lanes. Puddles slow you down</li>
           </ul>
         </div>

@@ -101,7 +101,7 @@ class AudioEngine {
     this.tone({ freq: 500, end: 220, dur: 0.18, type: 'sine', vol: 0.25 });
   }
 
-  /** Two low "stamp" thumps for being held up in the paperwork queue. */
+  /** Two low thumps for being detained. */
   detain(): void {
     this.tone({ freq: 160, end: 70, dur: 0.18, type: 'square', vol: 0.4 });
     this.tone({ freq: 140, end: 60, dur: 0.22, type: 'square', vol: 0.4, delay: 0.22 });
@@ -128,6 +128,24 @@ class AudioEngine {
   shieldPop(): void {
     this.noiseBurst({ dur: 0.3, vol: 0.4, filter: 2600 });
     this.tone({ freq: 880, end: 220, dur: 0.25, type: 'sine', vol: 0.4 });
+  }
+
+  /** A canister thrown: a short rising whoosh. */
+  gasThrow(): void {
+    this.tone({ freq: 220, end: 520, dur: 0.22, type: 'sawtooth', vol: 0.18 });
+    this.noiseBurst({ dur: 0.18, vol: 0.18, filter: 3200 });
+  }
+
+  /** Canister bursts: a long hiss. */
+  gasBurst(): void {
+    this.noiseBurst({ dur: 0.6, vol: 0.42, filter: 2600 });
+    this.tone({ freq: 140, end: 70, dur: 0.25, type: 'square', vol: 0.2 });
+  }
+
+  /** Coughing: two quick low blips. */
+  cough(): void {
+    this.tone({ freq: 190, end: 120, dur: 0.1, type: 'square', vol: 0.3 });
+    this.tone({ freq: 175, end: 105, dur: 0.12, type: 'square', vol: 0.3, delay: 0.14 });
   }
 
   hit(): void {

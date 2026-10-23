@@ -28,7 +28,7 @@ const ROWS: readonly RowDef[] = [
   { kind: 'puddle', minStage: 0, weight: 2 },
   { kind: 'clerks', minStage: 0, weight: 3 },
   { kind: 'paper', minStage: 1, weight: 2 },
-  { kind: 'stampers', minStage: 2, weight: 2 },
+  { kind: 'stampers', minStage: 1, weight: 2 },
   { kind: 'combo', minStage: 2, weight: 2 },
   { kind: 'traffic', minStage: 1, weight: 2 },
 ];
@@ -145,7 +145,7 @@ export class Spawner {
       if (isCheckpoint) this.checkpointIdx += 1;
       const open = isCheckpoint ? this.spawnCheckpoint(z, stage) : this.spawnRow(z, stage);
       this.placeTrail(z, open);
-      const gap = speed * (1.0 + rand(0, stage >= 3 ? 0.45 : 0.7)) + 6;
+      const gap = speed * (0.85 + rand(0, stage >= 3 ? 0.35 : 0.55)) + 5;
       this.nextRowAt += gap;
 
       if (this.nextRowAt >= this.nextPowerAt && open.length > 0) {
@@ -229,7 +229,7 @@ export class Spawner {
         }
         const center = (LANE_X[gaps[0]] + LANE_X[gaps[gaps.length - 1]]) / 2;
         const range = 0.28 + 0.25 * gapLanes;
-        const zone = patrolZone(center, range, 0.55 + stage * 0.12);
+        const zone = patrolZone(center, range, 0.7 + stage * 0.15);
         this.world.spawn('clerk', zone.center, z - 5, { patrol: zone });
         // Reward a jump over the barricades with a high token.
         const jumpLane = [0, 1, 2, 3].find((l) => !gaps.includes(l)) ?? 0;
@@ -260,7 +260,7 @@ export class Spawner {
         const count = stage >= 2 ? 2 : 1;
         for (let i = 0; i < count; i++) {
           this.world.spawn('rickshaw', rand(-0.6, 0.6), z + i * 1.8, {
-            patrol: { center: 0, range: 0.78, speed: 0.75 + stage * 0.12 + i * 0.2 },
+            patrol: { center: 0, range: 0.78, speed: 0.9 + stage * 0.14 + i * 0.25 },
           });
         }
         return [0, 1, 2, 3];
@@ -291,7 +291,7 @@ export class Spawner {
       if (lane !== gapLane) this.world.spawn('barricade', LANE_X[lane], z);
     }
     const center = LANE_X[gapLane];
-    const speed = 0.85 + stage * 0.1;
+    const speed = 1.05 + stage * 0.12;
     const a = patrolZone(center, 0.7, speed);
     const b = patrolZone(center, 0.7, speed * 1.25);
     this.world.spawn('clerk', a.center, z - 3, { patrol: a });
