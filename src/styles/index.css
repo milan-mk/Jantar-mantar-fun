@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0b1530;
+  color: #fff4dc;
+  font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Visible keyboard focus everywhere. */
+:focus-visible {
+  outline: 3px solid #ffd23f;
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+.game-surface canvas {
+  touch-action: none;
+  display: block;
+}
+
+@keyframes dd-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes dd-slide {
+  0%, 100% { transform: translateX(0) scaleY(1); }
+  50% { transform: translateX(8px) scaleY(0.92); }
+}
+@keyframes dd-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.dd-bob { animation: dd-bob 0.9s ease-in-out infinite; }
+.dd-slide { animation: dd-slide 0.9s ease-in-out infinite; }
+.dd-pop { animation: dd-pop 0.22s ease-out both; }
+
+.reduce-motion .dd-bob,
+.reduce-motion .dd-slide,
+.reduce-motion .dd-pop {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd-bob, .dd-slide, .dd-pop { animation: none; }
+}
