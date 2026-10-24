@@ -97,7 +97,7 @@ export class World {
       const e = this.entities[i];
       e.z -= (speed + e.vz) * dtSec;
       if (e.spec.animated) e.walk += dtSec * (3 + (speed + e.vz) * 0.35);
-      if (e.homing > 0 && e.z > 2.6) {
+      if (e.homing > 0 && e.z > 5.5) {
         const dx = targetX - e.x;
         const step = e.homing * dtSec;
         e.x += Math.max(-step, Math.min(step, dx));
@@ -115,7 +115,17 @@ export class World {
           p.dir = -1;
         }
       }
-      if (e.z < e.spec.despawnZ) this.remove(e);
+      // Police chasing from behind when player crosses them:
+      if ((e.kind === 'clerk' || e.kind === 'stamp') && !e.used) {
+        if (e.z <= 0.2 && e.z > -6) {
+          e.vz = -speed * 0.85; // match forward pace to stay in chase behind runner
+          const dx = targetX - e.x;
+          e.x += Math.max(-1.8 * dtSec, Math.min(1.8 * dtSec, dx));
+          if (e.spec.animated) e.walk += dtSec * 8; // intense running cycle
+        }
+      }
+      const despawnZ = (e.kind === 'clerk' || e.kind === 'stamp') ? -6 : e.spec.despawnZ;
+      if (e.z < despawnZ) this.remove(e);
     }
   }
 
@@ -132,8 +142,13 @@ export class World {
       const squeeze = e.spec.squeezeX ?? 1;
       img.setPosition(xAt(e.x, e.z, camX), yAt(e.z) - e.lift * PPM * s);
       img.setScale(s * unit * squeeze, s * unit);
-      img.setDepth(e.spec.decal ? 12 : 1000 - e.z * 4);
-      img.setAlpha(Math.max(0, Math.min(1, (VIEW_DIST - e.z) / 22)));
+      if (e.z < 0 && (e.kind === 'clerk' || e.kind === 'stamp')) {
+        img.setDepth(1050);
+        img.setAlpha(Math.max(0, 1 - Math.abs(e.z) / 6));
+      } else {
+        img.setDepth(e.spec.decal ? 12 : 1000 - e.z * 4);
+        img.setAlpha(Math.max(0, Math.min(1, (VIEW_DIST - e.z) / 22)));
+      }
     }
   }
 }

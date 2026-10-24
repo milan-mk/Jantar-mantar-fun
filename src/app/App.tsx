@@ -78,7 +78,7 @@ export default function App() {
   optionsRef.current.bestScore = modeBest;
   optionsRef.current.mode = mode;
   optionsRef.current.dailyKey = dailyKey;
-  optionsRef.current.ghost = save.ghosts[ghostKey] ?? null;
+  optionsRef.current.ghost = null;
 
   // Persist whenever the save changes.
   useEffect(() => {

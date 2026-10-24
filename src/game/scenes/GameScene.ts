@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { audio } from '../../lib/audio';
-import type { GhostRun, MoveVector, PowerUpKind, RunStats } from '../../types';
+import type { MoveVector, PowerUpKind, RunStats } from '../../types';
 import { TEXTURE_HEIGHT } from '../art';
-import { RUN_POSES, FRAME_H, RES, textureKey } from '../art/characterArt';
+import { textureKey } from '../art/characterArt';
 import { TEX } from '../art/worldArt';
 import { CHARACTERS, type CharacterDef } from '../config/characters';
 import {
@@ -27,7 +27,6 @@ import {
   STUMBLE_MS,
   STUN_MS,
   ENERGY_SPEED_MULT,
-  VIEW_DIST,
   WIN_HOLD_MS,
 } from '../config/constants';
 import { ITEM_POINTS, type EntityKind } from '../config/entities';
@@ -55,7 +54,7 @@ const GUARD_SLOW_MS = 5000;
 const GUARD_SLOW_FACTOR = 0.45;
 const FAST_ESCAPE_MS = 2500;
 
-type Weather = 'clear' | 'dusk' | 'rain';
+type Weather = 'clear' | 'dusk';
 const TRACE_STEP_MS = 100;
 const MAX_TRACE = 3000;
 
@@ -105,7 +104,6 @@ export class GameScene extends Phaser.Scene {
   private rain!: Emitter;
   private readonly passedGuards = new WeakSet<Entity>();
   private ghostImg!: Phaser.GameObjects.Image;
-  private ghost: GhostRun | null = null;
   private trace: { d: number[]; x: number[] } = { d: [], x: [] };
   private traceMs = 0;
   private unsubscribers: Array<() => void> = [];
@@ -474,6 +472,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     switch (e.kind) {
+      case 'barricade':
+        e.used = true;
+        r.stumbleMs = STUMBLE_MS;
+        this.damage(45, 'CRASH!');
+        break;
       case 'puddle':
         e.used = true;
         r.splashMs = SPLASH_MS;
@@ -583,10 +586,18 @@ export class GameScene extends Phaser.Scene {
     audio.collect(tier);
     if (itemKind === 'megaphone') {
       this.guardSlowMs = GUARD_SLOW_MS;
-      this.popupAt('Crowd cheers! Guards slow down', GAME_WIDTH / 2, 150, '#ffd23f');
+      this.popupAt('Burger Power! Guards slow down', GAME_WIDTH / 2, 150, '#ffd23f');
     }
+    const foodName =
+      itemKind === 'token'
+        ? `+${points} Pizza! 🍕`
+        : itemKind === 'megaphone'
+          ? `+${points} Burger! 🍔`
+          : itemKind === 'placard'
+            ? `+${points} Biryani! 🍲`
+            : `+${points} Samosas! 🥟`;
     this.burst.explode(this.reduced ? 3 : 9, x, y);
-    this.popupAt(`+${points}`, x, y - 24, this.power.multiplier > 1 ? '#ffd23f' : '#fff4dc');
+    this.popupAt(foodName, x, y - 24, this.power.multiplier > 1 ? '#ffd23f' : '#fff4dc');
     if (itemKind === 'fact' && this.runner.life < MAX_LIFE) {
       this.runner.life = Math.min(MAX_LIFE, this.runner.life + HEAL_FROM_FACT);
       this.popupAt(`+${HEAL_FROM_FACT} stamina`, x, y - 52, '#7fe8e2');
@@ -648,7 +659,7 @@ export class GameScene extends Phaser.Scene {
   private applyGas(): void {
     const r = this.runner;
     if (!this.gasState.inside || r.dead || this.wasDetained) return;
-    r.stumbleMs = Math.max(r.stumbleMs, 350);
+    r.stumbleMs = Math.max(r.stumbleMs, 450);
     if (!this.gasState.firstContact || this.power.invulnerable) return;
     if (this.power.hasShield) {
       this.power.consumeShield();
@@ -657,8 +668,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     audio.cough();
-    r.stumbleMs = 1400;
-    this.damage(12, 'COUGH!');
+    r.stumbleMs = 1500;
+    this.damage(35, 'TEAR GAS!');
   }
 
   private resetRunCounters(): void {
@@ -677,20 +688,17 @@ export class GameScene extends Phaser.Scene {
     const daily = this.opts.mode === 'daily';
     const seed = daily ? dailySeed(this.opts.dailyKey) : null;
     if (seed !== null) {
-      this.weather = (['clear', 'dusk', 'rain'] as const)[seed % 3];
+      this.weather = (['clear', 'dusk'] as const)[seed % 2];
     } else {
       const roll = Math.random();
-      this.weather = roll < 0.25 ? 'rain' : roll < 0.5 ? 'dusk' : 'clear';
+      this.weather = roll < 0.5 ? 'dusk' : 'clear';
     }
     const tint = this.weatherTint;
-    if (this.weather === 'rain') tint.setFillStyle(0x1a2a5a, 0.2);
-    else if (this.weather === 'dusk') tint.setFillStyle(0xff7a3d, 0.13);
+    if (this.weather === 'dusk') tint.setFillStyle(0xff7a3d, 0.13);
     else tint.setFillStyle(0xffffff, 0);
-    if (this.weather === 'rain' && !this.reduced) this.rain.start();
-    else this.rain.stop();
-    this.spawner = new Spawner(this.world, GOAL_METERS, seed, this.weather === 'rain');
-    if (this.weather === 'rain') this.popupAt('Rainy day: mind the puddles!', GAME_WIDTH / 2, 120, '#bfe3ff');
-    else if (this.weather === 'dusk') this.popupAt('Sunset run!', GAME_WIDTH / 2, 120, '#ffd9a0');
+    this.rain.stop();
+    this.spawner = new Spawner(this.world, GOAL_METERS, seed, false);
+    if (this.weather === 'dusk') this.popupAt('Sunset run!', GAME_WIDTH / 2, 120, '#ffd9a0');
   }
 
   private announceCheckpoint(): void {
@@ -705,7 +713,6 @@ export class GameScene extends Phaser.Scene {
   private resetTrace(): void {
     this.trace = { d: [], x: [] };
     this.traceMs = 0;
-    this.ghost = this.opts.ghost;
     if (this.ghostImg) this.ghostImg.setVisible(false);
   }
 
@@ -720,34 +727,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderGhost(): void {
-    const g = this.ghost;
-    const img = this.ghostImg;
-    if (!g || this.runState === 'over') {
-      img.setVisible(false);
-      return;
-    }
-    const f = this.timeMs / TRACE_STEP_MS;
-    const i = Math.floor(f);
-    if (i + 1 >= g.d.length) {
-      img.setVisible(false); // the old run has finished
-      return;
-    }
-    const k = f - i;
-    const dist = (g.d[i] + (g.d[i + 1] - g.d[i]) * k) / 10;
-    const gx = (g.x[i] + (g.x[i + 1] - g.x[i]) * k) / 100;
-    const z = dist - this.distance;
-    if (z < -1.5 || z > VIEW_DIST - 10) {
-      img.setVisible(false);
-      return;
-    }
-    const s = scaleAt(z);
-    const pose = RUN_POSES[Math.floor(this.timeMs / 130) % RUN_POSES.length];
-    img
-      .setTexture(textureKey(this.def, pose))
-      .setPosition(xAt(gx, z, this.camX), yAt(z))
-      .setScale((s * 1.75 * PPM) / (FRAME_H * RES))
-      .setDepth(999 - z * 4)
-      .setVisible(true);
+    if (this.ghostImg) this.ghostImg.setVisible(false);
   }
 
   // ------------------------------------------------------------ run endings

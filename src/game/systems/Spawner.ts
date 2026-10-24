@@ -5,6 +5,7 @@ import type { World } from './World';
 
 type RowKind =
   | 'wall'
+  | 'police_block'
   | 'rickshaw'
   | 'cones'
   | 'puddle'
@@ -23,12 +24,13 @@ interface RowDef {
 
 const ROWS: readonly RowDef[] = [
   { kind: 'wall', minStage: 0, weight: 3 },
-  { kind: 'rickshaw', minStage: 0, weight: 3 },
-  { kind: 'cones', minStage: 0, weight: 2 },
-  { kind: 'puddle', minStage: 0, weight: 2 },
-  { kind: 'clerks', minStage: 0, weight: 3 },
-  { kind: 'paper', minStage: 1, weight: 2 },
-  { kind: 'stampers', minStage: 1, weight: 2 },
+  { kind: 'police_block', minStage: 0, weight: 4 },
+  { kind: 'clerks', minStage: 0, weight: 4 },
+  { kind: 'stampers', minStage: 1, weight: 3 },
+  { kind: 'rickshaw', minStage: 0, weight: 2 },
+  { kind: 'cones', minStage: 0, weight: 1 },
+  { kind: 'puddle', minStage: 0, weight: 1 },
+  { kind: 'paper', minStage: 1, weight: 1 },
   { kind: 'combo', minStage: 2, weight: 2 },
   { kind: 'traffic', minStage: 1, weight: 2 },
 ];
@@ -145,7 +147,7 @@ export class Spawner {
       if (isCheckpoint) this.checkpointIdx += 1;
       const open = isCheckpoint ? this.spawnCheckpoint(z, stage) : this.spawnRow(z, stage);
       this.placeTrail(z, open);
-      const gap = speed * (0.85 + rand(0, stage >= 3 ? 0.35 : 0.55)) + 5;
+      const gap = speed * (0.68 + rand(0, stage >= 3 ? 0.28 : 0.42)) + 3.8;
       this.nextRowAt += gap;
 
       if (this.nextRowAt >= this.nextPowerAt && open.length > 0) {
@@ -181,11 +183,28 @@ export class Spawner {
       this.nextBuildingAt += 4.5;
     }
     while (this.nextSpectatorAt - dist <= horizon) {
-      const side = rng() < 0.5 ? -1 : 1;
-      this.world.spawn('spectator', side * rand(1.14, 1.26), this.nextSpectatorAt - dist, {
-        variant: randInt(0, 3),
-      });
-      this.nextSpectatorAt += rand(7, 15);
+      const zAt = this.nextSpectatorAt - dist;
+      // Spawn on Left sidewalk
+      const leftRoll = rng();
+      if (leftRoll < 0.45) {
+        this.world.spawn('spectator', -rand(1.15, 1.28), zAt, { variant: randInt(0, 3) });
+      } else if (leftRoll < 0.75) {
+        this.world.spawn('reporter', -rand(1.16, 1.26), zAt);
+      } else {
+        this.world.spawn('cameraman', -rand(1.16, 1.26), zAt);
+      }
+
+      // Spawn on Right sidewalk
+      const rightRoll = rng();
+      if (rightRoll < 0.45) {
+        this.world.spawn('spectator', rand(1.15, 1.28), zAt + rand(-0.8, 0.8), { variant: randInt(0, 3) });
+      } else if (rightRoll < 0.75) {
+        this.world.spawn('cameraman', rand(1.16, 1.26), zAt + rand(-0.8, 0.8));
+      } else {
+        this.world.spawn('reporter', rand(1.16, 1.26), zAt + rand(-0.8, 0.8));
+      }
+
+      this.nextSpectatorAt += rand(4.5, 7.5);
     }
   }
 
@@ -230,7 +249,7 @@ export class Spawner {
         const center = (LANE_X[gaps[0]] + LANE_X[gaps[gaps.length - 1]]) / 2;
         const range = 0.28 + 0.25 * gapLanes;
         const zone = patrolZone(center, range, 0.7 + stage * 0.15);
-        this.world.spawn('clerk', zone.center, z - 5, { patrol: zone });
+        this.world.spawn('clerk', zone.center, z - 2, { patrol: zone });
         // Reward a jump over the barricades with a high token.
         const jumpLane = [0, 1, 2, 3].find((l) => !gaps.includes(l)) ?? 0;
         this.world.spawn('token', LANE_X[jumpLane], z, { lift: 1.9 });
@@ -265,17 +284,38 @@ export class Spawner {
         }
         return [0, 1, 2, 3];
       }
+      case 'police_block': {
+        // Police van parked on the road blocking lanes, with officers standing beside it!
+        const vanLeft = rng() < 0.5;
+        const vanX = vanLeft ? -0.42 : 0.42;
+        this.world.spawn('van', vanX, z);
+        if (vanLeft) {
+          blocked.add(0);
+          blocked.add(1);
+          // Police officer standing guard on the road next to the van
+          const guard = patrolZone(LANE_X[2], 0.22, 0.75 + stage * 0.18);
+          this.world.spawn('clerk', guard.center, z - 1.2, { patrol: guard });
+          blocked.add(2);
+        } else {
+          blocked.add(2);
+          blocked.add(3);
+          const guard = patrolZone(LANE_X[1], 0.22, 0.75 + stage * 0.18);
+          this.world.spawn('clerk', guard.center, z - 1.2, { patrol: guard });
+          blocked.add(1);
+        }
+        return [0, 1, 2, 3].filter((l) => !blocked.has(l));
+      }
       case 'clerks': {
-        const count = [1, randInt(1, 2), 2, randInt(2, 3)][stage] ?? 2;
+        const count = [2, 2, 3, 3][stage] ?? 2;
         for (const lane of lanes.slice(0, count)) {
-          this.world.spawn('clerk', LANE_X[lane] + rand(-0.1, 0.1), z, { vz: 3, homing: 0.7 });
+          this.world.spawn('clerk', LANE_X[lane] + rand(-0.08, 0.08), z + 6, { vz: 2.4 + stage * 0.25, homing: 0.6 });
         }
         return [0, 1, 2, 3];
       }
       case 'stampers': {
-        const count = stage >= 3 ? randInt(1, 2) : 1;
+        const count = stage >= 2 ? 2 : 1;
         for (const lane of lanes.slice(0, count)) {
-          this.world.spawn('stamp', LANE_X[lane], z, { vz: 2.2, homing: 0.5 });
+          this.world.spawn('stamp', LANE_X[lane], z + 8, { vz: 2.0 + stage * 0.2, homing: 0.5 });
         }
         return [0, 1, 2, 3];
       }
@@ -283,31 +323,37 @@ export class Spawner {
     return [0, 1, 2, 3].filter((l) => !blocked.has(l));
   }
 
-  /** A tougher barricade line with one gap, two fast guards, and a reward behind it. */
+  /** A tougher barricade line with Police Van, fast guards, and rewards. */
   private spawnCheckpoint(z: number, stage: number): number[] {
     this.lastRow = 'checkpoint';
-    const gapLane = randInt(0, 3);
+    const openLane = randInt(0, 3);
+    const vanLeft = openLane >= 2;
+    const vanX = vanLeft ? -0.42 : 0.42;
+    this.world.spawn('van', vanX, z);
+
     for (let lane = 0; lane < 4; lane++) {
-      if (lane !== gapLane) this.world.spawn('barricade', LANE_X[lane], z);
+      if (lane !== openLane && (vanLeft ? lane >= 2 : lane < 2)) {
+        this.world.spawn('barricade', LANE_X[lane], z);
+      }
     }
-    const center = LANE_X[gapLane];
-    const speed = 1.05 + stage * 0.12;
-    const a = patrolZone(center, 0.7, speed);
-    const b = patrolZone(center, 0.7, speed * 1.25);
-    this.world.spawn('clerk', a.center, z - 3, { patrol: a });
-    this.world.spawn('clerk', b.center, z - 7, { patrol: b });
+    const center = LANE_X[openLane];
+    const speed = 1.1 + stage * 0.15;
+    const a = patrolZone(center, 0.5, speed);
+    const b = patrolZone(center, 0.6, speed * 1.2);
+    this.world.spawn('clerk', a.center, z - 1.5, { patrol: a });
+    this.world.spawn('stamp', b.center, z - 3.5, { patrol: b });
     // Reward for getting through.
     this.world.spawn('megaphone', center, z + 3);
     this.world.spawn('fact', center, z + 4.6);
-    return [gapLane];
+    return [openLane];
   }
 
   private pickPickup(): EntityKind {
     const r = rng();
-    if (r < 0.74) return 'token';
-    if (r < 0.84) return 'megaphone';
-    if (r < 0.93) return 'placard';
-    return 'fact';
+    if (r < 0.45) return 'token'; // Pizza slice
+    if (r < 0.75) return 'megaphone'; // Burger
+    if (r < 0.93) return 'placard'; // Biryani Handi
+    return 'fact'; // Samosa Treat platter
   }
 
   /** A line of pickups in an open lane just beyond the row. */

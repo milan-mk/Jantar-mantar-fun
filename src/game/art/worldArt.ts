@@ -60,43 +60,94 @@ export function seeded(seed: number): () => number {
   };
 }
 
-// ------------------------------------------------------------- collectibles
+// ------------------------------------------------------------- food collectibles (pizza, burger, biryani)
 
 const token = makeAsset(
   TEX.token,
-  36,
-  36,
-  `<circle cx="18" cy="18" r="16" fill="${SAFFRON}" stroke="${NAVY}" stroke-width="2.5"/>` +
-    `<circle cx="18" cy="18" r="11.5" fill="none" stroke="${CREAM}" stroke-width="1.6" stroke-dasharray="3 2.4"/>` +
-    `<path d="M18 26 C7 19 9 10 14.5 10 C16.5 10 18 11.5 18 13.5 C18 11.5 19.5 10 21.5 10 C27 10 29 19 18 26Z" fill="${CREAM}" stroke="${NAVY}" stroke-width="1.2"/>`,
+  40,
+  40,
+  // Golden crust
+  `<path d="M5,10 Q20,4 35,10 Q37,13 35,16 Q20,10 5,16 Q3,13 5,10 Z" fill="#d9822b" stroke="${NAVY}" stroke-width="2"/>` +
+    // Melty cheese slice pointing down
+    `<polygon points="6,13 34,13 20,38" fill="#ffd034" stroke="${NAVY}" stroke-width="2" stroke-linejoin="round"/>` +
+    // Rich red tomato sauce base
+    `<path d="M7,14 Q20,9 33,14 L31,18 Q20,13 9,18 Z" fill="#d63031"/>` +
+    // Pepperoni slices
+    `<circle cx="16" cy="18" r="4" fill="#c0392b" stroke="#782018" stroke-width="1.2"/>` +
+    `<circle cx="25" cy="22" r="3.6" fill="#c0392b" stroke="#782018" stroke-width="1.2"/>` +
+    `<circle cx="19" cy="28" r="3.2" fill="#c0392b" stroke="#782018" stroke-width="1.2"/>` +
+    // Basil herb flecks and cheese gloss
+    `<circle cx="14" cy="23" r="1.5" fill="#ffffff" opacity="0.8"/>` +
+    `<circle cx="22" cy="15" r="1.3" fill="#27ae60"/>` +
+    `<circle cx="15" cy="31" r="1.2" fill="#27ae60"/>` +
+    `<circle cx="26" cy="29" r="1.3" fill="#27ae60"/>`,
 );
 
 const megaphone = makeAsset(
   TEX.megaphone,
   44,
   40,
-  `<polygon points="6,16 30,5 30,35 6,24" fill="${RED}" stroke="${NAVY}" stroke-width="2.2" stroke-linejoin="round"/>` +
-    `<ellipse cx="30" cy="20" rx="5" ry="15" fill="${CREAM}" stroke="${NAVY}" stroke-width="2.2"/>` +
-    `<rect x="8" y="22" width="7" height="13" rx="2" fill="${NAVY}"/>` +
-    `<path d="M38 12 Q42 20 38 28 M41 8 Q47 20 41 32" fill="none" stroke="${SAFFRON}" stroke-width="2" stroke-linecap="round"/>`,
+  // Top bun with curve
+  `<path d="M7,17 Q7,4 22,4 Q37,4 37,17 Z" fill="#e59846" stroke="${NAVY}" stroke-width="2"/>` +
+    // White sesame seeds
+    `<ellipse cx="15" cy="9" rx="1.5" ry="0.8" fill="#fff5eb" transform="rotate(-15 15 9)"/>` +
+    `<ellipse cx="22" cy="7" rx="1.5" ry="0.8" fill="#fff5eb"/>` +
+    `<ellipse cx="29" cy="9" rx="1.5" ry="0.8" fill="#fff5eb" transform="rotate(15 29 9)"/>` +
+    `<ellipse cx="18" cy="13" rx="1.5" ry="0.8" fill="#fff5eb" transform="rotate(5 18 13)"/>` +
+    `<ellipse cx="26" cy="13" rx="1.5" ry="0.8" fill="#fff5eb" transform="rotate(-5 26 13)"/>` +
+    // Tomato slice
+    `<rect x="6" y="17" width="32" height="4" rx="2" fill="#e74c3c" stroke="${NAVY}" stroke-width="1.4"/>` +
+    // Wavy lettuce leaf
+    `<path d="M5,21 Q9,19 13,21 Q17,23 22,21 Q27,19 31,21 Q35,23 39,21 L38,24 Q33,26 28,24 Q23,22 18,24 Q13,26 6,24 Z" fill="#2ecc71" stroke="${NAVY}" stroke-width="1.2"/>` +
+    // Cheddar cheese drip
+    `<polygon points="8,23 36,23 33,29 27,25 21,30 15,25 11,28" fill="#f1c40f" stroke="${NAVY}" stroke-width="1.2"/>` +
+    // Grilled burger patty
+    `<rect x="6" y="24" width="32" height="7" rx="3.5" fill="#5a3825" stroke="${NAVY}" stroke-width="1.8"/>` +
+    // Bottom toasted bun
+    `<path d="M8,30 L36,30 Q36,37 22,37 Q8,37 8,30 Z" fill="#d9822b" stroke="${NAVY}" stroke-width="1.8"/>`,
 );
 
 const placard = makeAsset(
   TEX.placard,
-  40,
-  56,
-  `<rect x="18" y="32" width="4" height="24" fill="#7a4b24"/>` +
-    `<rect x="3" y="2" width="34" height="32" rx="3" fill="${CREAM}" stroke="${NAVY}" stroke-width="2.4"/>` +
-    `<polygon points="20,7 23,15 31,15 24.7,20 27,28 20,23 13,28 15.3,20 9,15 17,15" fill="${SAFFRON}" stroke="${NAVY}" stroke-width="1.2" stroke-linejoin="round"/>`,
+  44,
+  44,
+  // Rising steam
+  `<path d="M16,9 Q14,5 18,3" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<path d="M22,8 Q24,4 21,2" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round"/>` +
+    `<path d="M28,9 Q30,5 26,3" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.8" stroke-linecap="round"/>` +
+    // Clay Matka/Handi pot
+    `<path d="M8,22 Q5,36 14,41 Q22,43 30,41 Q39,36 36,22 Z" fill="#a0522d" stroke="${NAVY}" stroke-width="2.2"/>` +
+    `<ellipse cx="22" cy="22" rx="15" ry="4.5" fill="#8b4513" stroke="${NAVY}" stroke-width="2"/>` +
+    // Steaming aromatic biryani rice
+    `<ellipse cx="22" cy="20" rx="13" ry="7" fill="#f39c12"/>` +
+    `<ellipse cx="22" cy="18" rx="10" ry="5.5" fill="#f1c40f"/>` +
+    // Roasted meat / chicken drumstick piece
+    `<path d="M22,12 Q29,11 32,16 Q27,19 22,14 Z" fill="#783510" stroke="${NAVY}" stroke-width="1.2"/>` +
+    `<circle cx="33" cy="17" r="2.2" fill="#fff5eb" stroke="${NAVY}" stroke-width="1"/>` +
+    // Saffron rice, fried onions & mint garnish
+    `<circle cx="16" cy="17" r="1.3" fill="#e74c3c"/>` +
+    `<circle cx="20" cy="15" r="1.2" fill="#27ae60"/>` +
+    `<circle cx="26" cy="18" r="1.3" fill="#27ae60"/>` +
+    `<circle cx="15" cy="20" r="1.2" fill="#d35400"/>` +
+    `<circle cx="27" cy="21" r="1.2" fill="#e67e22"/>` +
+    // Handi decorative golden neck band
+    `<path d="M10,25 Q22,29 34,25" fill="none" stroke="#ffd23f" stroke-width="1.8"/>`,
 );
 
 const fact = makeAsset(
   TEX.fact,
-  40,
-  40,
-  `<circle cx="20" cy="20" r="17" fill="${TEAL}" stroke="${NAVY}" stroke-width="2.5"/>` +
-    `<circle cx="20" cy="20" r="12.5" fill="none" stroke="${CREAM}" stroke-width="2"/>` +
-    `<path d="M13 20.5 L18 25.5 L27.5 14.5" fill="none" stroke="${CREAM}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
+  42,
+  42,
+  // Golden platter plate
+  `<ellipse cx="21" cy="24" rx="20" ry="14" fill="#ffd700" stroke="${NAVY}" stroke-width="2"/>` +
+    `<ellipse cx="21" cy="23" rx="16" ry="10.5" fill="#fff9e6" stroke="${NAVY}" stroke-width="1.2"/>` +
+    // Hot samosas
+    `<polygon points="14,14 8,24 20,24" fill="#e69530" stroke="${NAVY}" stroke-width="1.4"/>` +
+    `<polygon points="26,14 20,24 32,24" fill="#d68220" stroke="${NAVY}" stroke-width="1.4"/>` +
+    // Sweet gulab jamun & green mint chutney
+    `<circle cx="21" cy="26" r="4.2" fill="#5a220d" stroke="${NAVY}" stroke-width="1.2"/>` +
+    `<circle cx="14" cy="26" r="3" fill="#27ae60"/>` +
+    `<circle cx="28" cy="26" r="3" fill="#c0392b"/>`,
 );
 
 // ---------------------------------------------------------------- power-ups

@@ -1,9 +1,9 @@
 import { BUILDING_KEYS, ROAD_TEX, SPECTATOR_KEYS } from '../art/roadArt';
 import { TEX } from '../art/worldArt';
 
-export type HazardKind = 'barricade' | 'rickshaw' | 'paper' | 'cones' | 'puddle' | 'clerk' | 'stamp';
+export type HazardKind = 'barricade' | 'rickshaw' | 'paper' | 'cones' | 'puddle' | 'clerk' | 'stamp' | 'van';
 export type PickupKind = 'token' | 'megaphone' | 'placard' | 'fact' | 'shield' | 'community' | 'energy';
-export type SceneryKind = 'tree' | 'lamp' | 'building' | 'spectator' | 'arch';
+export type SceneryKind = 'tree' | 'lamp' | 'building' | 'spectator' | 'reporter' | 'cameraman' | 'arch';
 export type EntityKind = HazardKind | PickupKind | SceneryKind;
 
 export interface EntitySpec {
@@ -34,8 +34,9 @@ export const SPECS: Record<EntityKind, EntitySpec> = {
   paper: { frames: [ROAD_TEX.paper], heightM: 1.5, halfW: 0.19, halfD: 0.35, clearH: 0, lift: 0, despawnZ: -3 },
   cones: { frames: [ROAD_TEX.cones], heightM: 0.55, halfW: 0.2, halfD: 0.3, clearH: 0.5, lift: 0, despawnZ: -3 },
   puddle: { frames: [ROAD_TEX.puddle], heightM: 0.24, halfW: 0.25, halfD: 0.5, clearH: 0.12, lift: 0, decal: true, despawnZ: -3 },
-  clerk: { frames: [ROAD_TEX.clerk0, ROAD_TEX.clerk1], animated: true, heightM: 1.75, halfW: 0.3, halfD: 0.6, clearH: 0, lift: 0, despawnZ: -3 },
-  stamp: { frames: [ROAD_TEX.stamp0, ROAD_TEX.stamp1], animated: true, heightM: 2.1, halfW: 0.24, halfD: 0.4, clearH: 0, lift: 0, despawnZ: -3 },
+  clerk: { frames: [ROAD_TEX.clerk0, ROAD_TEX.clerk1], animated: true, heightM: 1.75, halfW: 0.22, halfD: 0.35, clearH: 0, lift: 0, despawnZ: -3 },
+  stamp: { frames: [ROAD_TEX.stamp0, ROAD_TEX.stamp1], animated: true, heightM: 2.1, halfW: 0.22, halfD: 0.35, clearH: 0, lift: 0, despawnZ: -3 },
+  van: { frames: [ROAD_TEX.van], heightM: 2.3, halfW: 0.44, halfD: 0.85, clearH: 0, lift: 0, despawnZ: -4 },
 
   token: { frames: [TEX.token], heightM: 0.5, halfW: 0.2, halfD: 0.6, clearH: 0, lift: 0.5, despawnZ: -3 },
   megaphone: { frames: [TEX.megaphone], heightM: 0.55, halfW: 0.2, halfD: 0.6, clearH: 0, lift: 0.5, despawnZ: -3 },
@@ -49,10 +50,12 @@ export const SPECS: Record<EntityKind, EntitySpec> = {
   lamp: { frames: [ROAD_TEX.lamp], heightM: 5.0, halfW: 0, halfD: 0, clearH: 0, lift: 0, despawnZ: -6 },
   building: { frames: BUILDING_KEYS, heightM: 7, halfW: 0, halfD: 0, clearH: 0, lift: 0, squeezeX: 0.55, despawnZ: -8 },
   spectator: { frames: SPECTATOR_KEYS, heightM: 1.65, halfW: 0, halfD: 0, clearH: 0, lift: 0, despawnZ: -4 },
+  reporter: { frames: [ROAD_TEX.reporter], heightM: 1.75, halfW: 0, halfD: 0, clearH: 0, lift: 0, despawnZ: -4 },
+  cameraman: { frames: [ROAD_TEX.cameraman], heightM: 1.75, halfW: 0, halfD: 0, clearH: 0, lift: 0, despawnZ: -4 },
   arch: { frames: [ROAD_TEX.arch], heightM: 3.4, halfW: 0, halfD: 0, clearH: 0, lift: 0, despawnZ: -8 },
 };
 
-export const HAZARD_KINDS: readonly EntityKind[] = ['barricade', 'rickshaw', 'paper', 'cones', 'puddle', 'clerk', 'stamp'];
+export const HAZARD_KINDS: readonly EntityKind[] = ['barricade', 'rickshaw', 'paper', 'cones', 'puddle', 'clerk', 'stamp', 'van'];
 export const PICKUP_KINDS: readonly EntityKind[] = ['token', 'megaphone', 'placard', 'fact', 'shield', 'community', 'energy'];
 
 export const ITEM_POINTS = {
